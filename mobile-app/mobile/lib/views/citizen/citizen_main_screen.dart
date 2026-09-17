@@ -3,9 +3,11 @@ import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/auth_provider.dart';
 import '../auth/login_screen.dart';
-
+import 'citizen_home_tab.dart';
 import 'create_report_screen.dart';
 import 'report_list_screen.dart';
+import 'spatial_map_tab.dart';
+import 'waste_banks_screen.dart';
 
 class CitizenMainScreen extends StatefulWidget {
   const CitizenMainScreen({super.key});
@@ -16,6 +18,7 @@ class CitizenMainScreen extends StatefulWidget {
 
 class _CitizenMainScreenState extends State<CitizenMainScreen> {
   int _currentIndex = 0;
+  final GlobalKey<SpatialMapTabState> _mapKey = GlobalKey<SpatialMapTabState>();
 
   void _onTabSelected(int index) {
     setState(() => _currentIndex = index);
@@ -31,11 +34,131 @@ class _CitizenMainScreenState extends State<CitizenMainScreen> {
     });
   }
 
+  void _navigateToMapCoordinates(double lat, double lng) {
+    setState(() => _currentIndex = 1);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _mapKey.currentState?.moveToCoordinates(lat, lng, zoom: 16.5);
+    });
+  }
+
+  void _showProfileModal() {
+    final user = Provider.of<AuthProvider>(context, listen: false).currentUser;
+
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+              const SizedBox(height: 20),
+              CircleAvatar(
+                radius: 36,
+                backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.15),
+                child: const Icon(Icons.person, size: 44, color: AppTheme.primaryColor),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                user?.name ?? 'Warga Masyarakat',
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textDark),
+              ),
+              const SizedBox(height: 4),
+              Text(user?.email ?? '', style: const TextStyle(fontSize: 13, color: AppTheme.textMuted)),
+              const SizedBox(height: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  'Peran: ${user?.role ?? 'Masyarakat'}',
+                  style: const TextStyle(fontSize: 11, color: AppTheme.primaryColor, fontWeight: FontWeight.bold),
+                ),
+              ),
+              const SizedBox(height: 24),
+              const Divider(),
+              const SizedBox(height: 8),
+              ListTile(
+                leading: const Icon(Icons.location_city_rounded, color: AppTheme.primaryColor),
+                title: const Text('Wilayah Penugasan / Domisili', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                subtitle: Text(
+                  user?.villageName != null ? 'Kelurahan ${user!.villageName!}, Sumbersari' : 'Kecamatan Sumbersari',
+                  style: const TextStyle(fontSize: 12),
+                ),
+              ),
+              ListTile(
+                leading: const Icon(Icons.phone_rounded, color: AppTheme.primaryColor),
+                title: const Text('Nomor Telepon', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                subtitle: Text(user?.phone ?? '-', style: const TextStyle(fontSize: 12)),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppTheme.accentDanger,
+                    side: const BorderSide(color: AppTheme.accentDanger),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  onPressed: () async {
+                    Navigator.pop(ctx);
+                    await _handleLogout();
+                  },
+                  icon: const Icon(Icons.logout_rounded, size: 18),
+                  label: const Text('Keluar Akun', style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _handleLogout() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Keluar Akun'),
+        content: const Text('Apakah Anda yakin ingin keluar dari aplikasi?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Batal')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.accentDanger),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Keluar'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true && mounted) {
+      await Provider.of<AuthProvider>(context, listen: false).logout();
+      if (mounted) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
+          (route) => false,
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final auth = context.watch<AuthProvider>();
-    final user = auth.currentUser;
-
     return Scaffold(
       appBar: AppBar(
         title: Row(
@@ -43,63 +166,34 @@ class _CitizenMainScreenState extends State<CitizenMainScreen> {
             Container(
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: AppTheme.emphasis.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(8),
+                color: AppTheme.secondaryColor.withValues(alpha: 0.25),
+                borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(Icons.delete_sweep_rounded, color: AppTheme.emphasis, size: 20),
+              child: const Icon(Icons.delete_sweep_rounded, color: Colors.white, size: 20),
             ),
             const SizedBox(width: 10),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Pap Sampah',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-                Text(
-                  'Halo, ${user?.name.split(' ').first ?? 'Warga'}!',
-                  style: const TextStyle(fontSize: 11, color: AppTheme.textMuted, fontWeight: FontWeight.normal),
-                ),
-              ],
+            const Text(
+              'Pap Sampah',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
             ),
           ],
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout_rounded, size: 20, color: AppTheme.accentDanger),
-            tooltip: 'Keluar Akun',
-            onPressed: () async {
-              final confirm = await showDialog<bool>(
-                context: context,
-                builder: (ctx) => AlertDialog(
-                  title: const Text('Keluar Akun'),
-                  content: const Text('Apakah Anda yakin ingin keluar dari aplikasi?'),
-                  actions: [
-                    TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Batal')),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(backgroundColor: AppTheme.accentDanger),
-                      onPressed: () => Navigator.pop(ctx, true),
-                      child: const Text('Keluar'),
-                    ),
-                  ],
-                ),
-              );
-              if (confirm == true && context.mounted) {
-                await context.read<AuthProvider>().logout();
-                if (context.mounted) {
-                  Navigator.of(context).pushAndRemoveUntil(
-                    MaterialPageRoute(builder: (_) => const LoginScreen()),
-                    (route) => false,
-                  );
-                }
-              }
-            },
+            icon: const CircleAvatar(
+              radius: 14,
+              backgroundColor: Colors.white24,
+              child: Icon(Icons.person, size: 18, color: Colors.white),
+            ),
+            tooltip: 'Profil Saya',
+            onPressed: _showProfileModal,
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'citizen_lapor_fab',
         onPressed: _openCreateReport,
-        backgroundColor: AppTheme.emphasis,
+        backgroundColor: AppTheme.primaryColor,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.camera_alt_rounded),
         label: const Text('Lapor Sampah', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -107,10 +201,10 @@ class _CitizenMainScreenState extends State<CitizenMainScreen> {
       body: IndexedStack(
         index: _currentIndex,
         children: [
-          _CitizenHomeTab(onOpenReport: _openCreateReport),
-          const _CitizenMapTabPlaceholder(),
+          CitizenHomeTab(onSwitchTab: _onTabSelected),
+          SpatialMapTab(key: _mapKey),
           const ReportListScreen(),
-          const _CitizenProfileTab(),
+          WasteBanksScreen(onNavigateToMap: _navigateToMapCoordinates),
         ],
       ),
       bottomNavigationBar: NavigationBar(
@@ -121,232 +215,26 @@ class _CitizenMainScreenState extends State<CitizenMainScreen> {
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home_rounded, color: AppTheme.emphasis),
+            selectedIcon: Icon(Icons.home_rounded, color: AppTheme.primaryColor),
             label: 'Beranda',
           ),
           NavigationDestination(
             icon: Icon(Icons.map_outlined),
-            selectedIcon: Icon(Icons.map_rounded, color: AppTheme.emphasis),
+            selectedIcon: Icon(Icons.map_rounded, color: AppTheme.primaryColor),
             label: 'Peta',
           ),
           NavigationDestination(
             icon: Icon(Icons.assignment_outlined),
-            selectedIcon: Icon(Icons.assignment_rounded, color: AppTheme.emphasis),
+            selectedIcon: Icon(Icons.assignment_rounded, color: AppTheme.primaryColor),
             label: 'Laporan',
           ),
           NavigationDestination(
-            icon: Icon(Icons.person_outline_rounded),
-            selectedIcon: Icon(Icons.person_rounded, color: AppTheme.emphasis),
-            label: 'Profil',
+            icon: Icon(Icons.recycling_outlined),
+            selectedIcon: Icon(Icons.recycling_rounded, color: AppTheme.primaryColor),
+            label: 'Bank Sampah',
           ),
         ],
       ),
-    );
-  }
-}
-
-class _CitizenHomeTab extends StatelessWidget {
-  final VoidCallback onOpenReport;
-  const _CitizenHomeTab({required this.onOpenReport});
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(20),
-      children: [
-        // Welcome Banner Card
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [AppTheme.emphasis, Color(0xFF45612D)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x335B7E3C),
-                blurRadius: 16,
-                offset: Offset(0, 8),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.location_on, size: 14, color: AppTheme.accentSecondary),
-                    SizedBox(width: 4),
-                    Text(
-                      'Kecamatan Sumbersari',
-                      style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 14),
-              const Text(
-                'Temukan Sampah Liar di Lingkungan Anda?',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white, height: 1.3),
-              ),
-              const SizedBox(height: 6),
-              const Text(
-                'Foto langsung dan kirimkan lokasinya ke petugas kelurahan terdekat.',
-                style: TextStyle(color: Colors.white70, fontSize: 12),
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.accentSecondary,
-                  foregroundColor: AppTheme.textPrimary,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                ),
-                onPressed: onOpenReport,
-                icon: const Icon(Icons.camera_alt_rounded, size: 18),
-                label: const Text('Lapor Sekarang', style: TextStyle(fontWeight: FontWeight.bold)),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 24),
-
-        const Text(
-          'Layanan Cepat',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _QuickServiceCard(
-                title: 'Peta Sebaran',
-                desc: 'Titik sampah & heatmap',
-                icon: Icons.map_rounded,
-                color: const Color(0xFF0D9488),
-                onTap: () {},
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _QuickServiceCard(
-                title: 'Bank Sampah',
-                desc: '7 Lokasi Sumbersari',
-                icon: Icons.recycling_rounded,
-                color: AppTheme.emphasis,
-                onTap: () {},
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-class _QuickServiceCard extends StatelessWidget {
-  final String title;
-  final String desc;
-  final IconData icon;
-  final Color color;
-  final VoidCallback onTap;
-
-  const _QuickServiceCard({
-    required this.title,
-    required this.desc,
-    required this.icon,
-    required this.color,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: AppTheme.borderDefault),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icon, color: color, size: 24),
-            ),
-            const SizedBox(height: 12),
-            Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-            const SizedBox(height: 4),
-            Text(desc, style: const TextStyle(fontSize: 11, color: AppTheme.textMuted)),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _CitizenMapTabPlaceholder extends StatelessWidget {
-  const _CitizenMapTabPlaceholder();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Center(child: Text('Layar Peta Spasial (Tahap 4)'));
-  }
-}
-
-class _CitizenProfileTab extends StatelessWidget {
-  const _CitizenProfileTab();
-
-  @override
-  Widget build(BuildContext context) {
-    final user = context.watch<AuthProvider>().currentUser;
-    return ListView(
-      padding: const EdgeInsets.all(24),
-      children: [
-        Center(
-          child: Column(
-            children: [
-              CircleAvatar(
-                radius: 40,
-                backgroundColor: AppTheme.emphasis.withValues(alpha: 0.15),
-                child: const Icon(Icons.person, size: 48, color: AppTheme.emphasis),
-              ),
-              const SizedBox(height: 12),
-              Text(user?.name ?? 'Warga Masyarakat', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 4),
-              Text(user?.email ?? '', style: const TextStyle(fontSize: 13, color: AppTheme.textMuted)),
-              const SizedBox(height: 6),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                decoration: BoxDecoration(
-                  color: AppTheme.emphasis.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  'Peran: ${user?.role ?? 'Masyarakat'}',
-                  style: const TextStyle(fontSize: 11, color: AppTheme.emphasis, fontWeight: FontWeight.bold),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
     );
   }
 }

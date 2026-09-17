@@ -7,10 +7,17 @@ class AppTheme {
   static const Color accentWarning = Color(0xFFFF9D23);   // Energetic orange
   static const Color accentDanger = Color(0xFFEA5252);    // Alert red
 
+  // Ergonomic aliases
+  static const Color primaryColor = emphasis;
+  static const Color secondaryColor = accentSecondary;
+  static const Color danger = accentDanger;
+  static const Color warning = accentWarning;
+
   // Neutral tones
   static const Color base = Color(0xFFFAFAF5);           // Soft off-white
   static const Color surface = Color(0xFFFFFFFF);        // Pure white card
   static const Color textPrimary = Color(0xFF1C1C1C);    // Deep dark
+  static const Color textDark = textPrimary;
   static const Color textMuted = Color(0x991C1C1C);      // 60% dark
   static const Color borderDefault = Color(0x14000000);  // 8% black
   static const Color borderAccent = Color(0x335B7E3C);   // 20% green
