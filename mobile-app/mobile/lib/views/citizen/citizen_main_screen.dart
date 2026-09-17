@@ -4,6 +4,9 @@ import '../../core/theme/app_theme.dart';
 import '../../providers/auth_provider.dart';
 import '../auth/login_screen.dart';
 
+import 'create_report_screen.dart';
+import 'report_list_screen.dart';
+
 class CitizenMainScreen extends StatefulWidget {
   const CitizenMainScreen({super.key});
 
@@ -16,6 +19,16 @@ class _CitizenMainScreenState extends State<CitizenMainScreen> {
 
   void _onTabSelected(int index) {
     setState(() => _currentIndex = index);
+  }
+
+  void _openCreateReport() {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const CreateReportScreen()),
+    ).then((created) {
+      if (created == true) {
+        _onTabSelected(2); // Switch to reports tab to view newly created report
+      }
+    });
   }
 
   @override
@@ -84,12 +97,19 @@ class _CitizenMainScreenState extends State<CitizenMainScreen> {
           ),
         ],
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _openCreateReport,
+        backgroundColor: AppTheme.emphasis,
+        foregroundColor: Colors.white,
+        icon: const Icon(Icons.camera_alt_rounded),
+        label: const Text('Lapor Sampah', style: TextStyle(fontWeight: FontWeight.bold)),
+      ),
       body: IndexedStack(
         index: _currentIndex,
         children: [
-          _CitizenHomeTab(onOpenReport: () => _onTabSelected(2)),
+          _CitizenHomeTab(onOpenReport: _openCreateReport),
           const _CitizenMapTabPlaceholder(),
-          const _CitizenReportsTabPlaceholder(),
+          const ReportListScreen(),
           const _CitizenProfileTab(),
         ],
       ),
@@ -287,15 +307,6 @@ class _CitizenMapTabPlaceholder extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Center(child: Text('Layar Peta Spasial (Tahap 4)'));
-  }
-}
-
-class _CitizenReportsTabPlaceholder extends StatelessWidget {
-  const _CitizenReportsTabPlaceholder();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Center(child: Text('Layar Laporan Warga (Tahap 3)'));
   }
 }
 
