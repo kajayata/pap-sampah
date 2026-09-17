@@ -4,13 +4,42 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
-- Fase 3 Selesai -> Siap masuk Fase 4 (Peta/Heatmap Kecamatan, Bank Sampah, TPA, Berita, & Integrasi Mobile)
+- Fase 4 Selesai -> Siap masuk Integrasi Client Mobile Flutter (Masyarakat & Petugas)
 
 ## Current Goal
 
-- Implementasi Peta Spasial & Heatmap Sebaran Sampah Kecamatan Sumbersari, data Bank Sampah/TPA/Berita, dan integrasi penuh aplikasi mobile Flutter.
+- Integrasi penuh REST API Laravel ke aplikasi mobile Flutter (`mobile-app/mobile/`) untuk fitur pelaporan warga, peta sampah, bank sampah, TPA, berita, cuaca, dan task management petugas kebersihan.
 
 ## Completed
+
+- [x] Peta Spasial & Heatmap Sebaran Sampah (`MapService.php`, `MapApiController.php`, `MapWebController.php`, `map/index.blade.php`):
+  - Penegakan Invariant #7: Laporan `RESOLVED` secara ketat tidak dihitung ke heatmap sampah aktif (hanya laporan aktif yang menjadi input heatmap)
+  - Penegakan Invariant #8: Mark laporan selesai tetap tampil sementara di peta visualisasi selama periode H+7 (`app_settings.marker_display_days`), dan disembunyikan otomatis setelah masa tampil berakhir tanpa menghapus data laporan maupun foto
+  - Modal komparasi visual foto Before (kondisi awal laporan warga) vs After (bukti pembersihan petugas) saat marker titik selesai diklik
+  - Layer switch interaktif: Sampah Aktif (merah), Sampah Selesai H+7 (hijau), Heatmap Kepadatan (kuning-oranye-merah), Bank Sampah (teal), TPA/TPS-3R (indigo), dan Poligon Batas 7 Kelurahan Sumbersari
+  - REST API Spasial: `GET /api/map/waste-points`, `GET /api/map/heatmap`, `GET /api/map/boundaries`
+- [x] Master Data & REST API Publik Bank Sampah (`WasteBankApiController.php`, `WasteBankController.php`, `waste_banks/`):
+  - Model `WasteBank` dengan accessor koordinat spasial PostGIS (`latitude`, `longitude`, `withCoordinates()`)
+  - REST API: `GET /api/waste-banks` dan `GET /api/waste-banks/{id}` lengkap dengan relasi kelurahan dan kontak
+  - Web Admin: CRUD Bank Sampah interaktif dengan picker koordinat Leaflet.js drag-and-drop
+- [x] Master Data & REST API Publik TPA / TPS-3R (`LandfillApiController.php`, `LandfillController.php`, `landfills/`):
+  - Model `Landfill` dengan accessor koordinat spasial PostGIS (`latitude`, `longitude`, `withCoordinates()`)
+  - REST API: `GET /api/landfills` dan `GET /api/landfills/{id}`
+  - Web Admin: CRUD Fasilitas TPA & TPS-3R dengan picker koordinat peta
+- [x] Master Data & REST API Publik Berita Edukasi Lingkungan (`NewsApiController.php`, `NewsController.php`, `news/`):
+  - Model `News` dengan accessor `thumbnail_url` via `ImageStorageService`, status `DRAFT`/`PUBLISHED`/`ARCHIVED`, dan auto-slug generator
+  - REST API: `GET /api/news` (pagination, search, scope published) dan `GET /api/news/{slug}`
+  - Web Admin: CRUD Berita edukasi lengkap dengan upload thumbnail kompresi
+- [x] REST API Cuaca Terkini & Konfigurasi Publik (`WeatherService.php`, `PublicInfoApiController.php`):
+  - `GET /api/weather`: Integrasi cuaca real-time Open-Meteo untuk Kecamatan Sumbersari (-8.172, 113.715) dengan caching 30 menit dan fallback tropical weather
+  - `GET /api/settings`: Pengaturan konfigurasi publik (`marker_display_days: 7`, dll)
+- [x] Seeder Data Master Fase 4 (`Fase4MasterDataSeeder.php`):
+  - 7 Bank Sampah nyata di 7 kelurahan Sumbersari dengan koordinat PostGIS akurat
+  - 2 Fasilitas TPA/TPS-3R rujukan
+  - 3 Artikel berita edukasi pengelolaan dan pemilahan sampah
+- [x] Automated Feature Test Suite Fase 4 (`Fase4FeatureTest.php`):
+  - 100% lulus (20 tests passed, 125 assertions) mencakup seluruh endpoint publik spasial dan web controller
+- [x] Integrasi Navigasi Navbar Web: Link "Peta & Heatmap", "Bank Sampah", "TPA", dan "Berita" responsif di header admin dashboard
 
 - [x] Service Penugasan & Pembersihan (`CleanupTaskService.php`):
   - Penugasan multi-petugas kebersihan desa dengan catatan instruksi kerja & daftar alat/barang yang perlu dibawa (Invariant #3 & #4)

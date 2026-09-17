@@ -54,11 +54,11 @@
 
     <!-- Filter & Search Bar -->
     <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
-        <form method="GET" action="{{ route('reports.index') }}" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <form method="GET" action="{{ route('reports.index') }}" class="flex flex-col sm:flex-row gap-3 items-center">
             <input type="hidden" name="status" value="{{ request('status', 'ALL') }}">
 
             <!-- Search Field -->
-            <div class="relative lg:col-span-2">
+            <div class="relative flex-1 w-full">
                 <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -67,15 +67,15 @@
                 <input type="text"
                        name="search"
                        value="{{ request('search') }}"
-                       placeholder="Cari kode laporan, pelapor, atau deskripsi..."
+                       placeholder="Cari kode laporan, pelapor, atau deskripsi (tekan Enter)..."
                        class="w-full pl-9 pr-3.5 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 text-sm placeholder-slate-400">
             </div>
 
             <!-- Category Filter -->
-            <div>
+            <div class="w-full sm:w-auto">
                 <select name="category_id"
                         onchange="this.form.submit()"
-                        class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 text-sm text-slate-700">
+                        class="w-full sm:w-48 px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 text-sm text-slate-700 bg-white">
                     <option value="">Semua Kategori</option>
                     @foreach($categories as $cat)
                         <option value="{{ $cat->id }}" {{ request('category_id') == $cat->id ? 'selected' : '' }}>
@@ -87,10 +87,10 @@
 
             <!-- Village Filter (Super Admin only) -->
             @if($isSuperAdmin)
-                <div>
+                <div class="w-full sm:w-auto">
                     <select name="village_id"
                             onchange="this.form.submit()"
-                            class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 text-sm text-slate-700">
+                            class="w-full sm:w-52 px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 text-sm text-slate-700 bg-white">
                         <option value="">Semua Kelurahan</option>
                         @foreach($villages as $vil)
                             <option value="{{ $vil->id }}" {{ request('village_id') == $vil->id ? 'selected' : '' }}>
@@ -99,17 +99,12 @@
                         @endforeach
                     </select>
                 </div>
-            @else
-                <div class="flex items-center gap-2">
-                    <button type="submit" class="w-full px-4 py-2 bg-emerald-800 hover:bg-emerald-900 text-white rounded-xl text-sm font-medium transition shadow-xs">
-                        Terapkan Filter
-                    </button>
-                    @if(request()->anyFilled(['search', 'category_id']))
-                        <a href="{{ route('reports.index', ['status' => request('status', 'ALL')]) }}" class="px-3 py-2 text-slate-500 hover:text-slate-800 text-sm font-medium transition">
-                            Reset
-                        </a>
-                    @endif
-                </div>
+            @endif
+
+            @if(request()->anyFilled(['search', 'category_id', 'village_id']))
+                <a href="{{ route('reports.index', ['status' => request('status', 'ALL')]) }}" class="px-3 py-2 text-slate-500 hover:text-slate-800 text-sm font-medium transition whitespace-nowrap self-center">
+                    Reset
+                </a>
             @endif
         </form>
     </div>

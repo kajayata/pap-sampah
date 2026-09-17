@@ -13,6 +13,7 @@ class DatabaseSeeder extends Seeder
             DistrictVillageSeeder::class,
             AdminSeeder::class,
             SampleWasteDataSeeder::class,
+            Fase4MasterDataSeeder::class,
         ]);
     }
 }

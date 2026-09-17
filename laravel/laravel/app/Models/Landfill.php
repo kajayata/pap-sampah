@@ -18,6 +18,12 @@ class Landfill extends Model
         'address',
         'description',
         'is_active',
+        'location',
+    ];
+
+    protected $appends = [
+        'latitude',
+        'longitude',
     ];
 
     protected function casts(): array
@@ -30,5 +36,21 @@ class Landfill extends Model
     public function village(): BelongsTo
     {
         return $this->belongsTo(Village::class, 'village_id');
+    }
+
+    public function getLatitudeAttribute(): ?float
+    {
+        return isset($this->attributes['lat']) ? (float) $this->attributes['lat'] : null;
+    }
+
+    public function getLongitudeAttribute(): ?float
+    {
+        return isset($this->attributes['lng']) ? (float) $this->attributes['lng'] : null;
+    }
+
+    public function scopeWithCoordinates($query)
+    {
+        return $query->select('landfills.*')
+            ->selectRaw('ST_Y(location) as lat, ST_X(location) as lng');
     }
 }

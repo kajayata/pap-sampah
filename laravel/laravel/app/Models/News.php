@@ -26,6 +26,10 @@ class News extends Model
         'published_at',
     ];
 
+    protected $appends = [
+        'thumbnail_url',
+    ];
+
     protected function casts(): array
     {
         return [
@@ -37,5 +41,25 @@ class News extends Model
     public function author(): BelongsTo
     {
         return $this->belongsTo(User::class, 'author_id');
+    }
+
+    public function getThumbnailUrlAttribute(): ?string
+    {
+        if (!$this->thumbnail_storage_key) {
+            return null;
+        }
+        return \App\Services\ImageStorageService::getUrl($this->thumbnail_storage_key);
+    }
+
+    public function scopePublished($query)
+    {
+        return $query->where('status', self::STATUS_PUBLISHED)
+            ->whereNotNull('published_at')
+            ->where('published_at', '<=', now());
+    }
+
+    public function isPublished(): bool
+    {
+        return $this->status === self::STATUS_PUBLISHED;
     }
 }

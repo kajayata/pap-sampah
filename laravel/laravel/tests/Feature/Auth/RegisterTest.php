@@ -4,16 +4,16 @@ namespace Tests\Feature\Auth;
 
 use App\Models\Role;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
 class RegisterTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     public function test_user_can_register_with_valid_data(): void
     {
-        Role::factory()->create(['name' => 'masyarakat']);
+        Role::firstOrCreate(['name' => 'masyarakat']);
 
         $response = $this->postJson('/api/register', [
             'name' => 'Rojali',
@@ -33,8 +33,8 @@ class RegisterTest extends TestCase
 
     public function test_registered_user_always_gets_masyarakat_role(): void
     {
-        $masyarakat = Role::factory()->create(['name' => 'masyarakat']);
-        Role::factory()->create(['name' => 'admin_desa']);
+        $masyarakat = Role::firstOrCreate(['name' => 'masyarakat']);
+        Role::firstOrCreate(['name' => 'admin_desa']);
 
         $this->postJson('/api/register', [
             'name' => 'Rojali',
@@ -51,7 +51,7 @@ class RegisterTest extends TestCase
 
     public function test_register_fails_with_duplicate_email(): void
     {
-        Role::factory()->create(['name' => 'masyarakat']);
+        Role::firstOrCreate(['name' => 'masyarakat']);
         User::factory()->create(['email' => 'dup@example.com']);
 
         $response = $this->postJson('/api/register', [
@@ -66,7 +66,7 @@ class RegisterTest extends TestCase
 
     public function test_register_fails_when_password_confirmation_mismatch(): void
     {
-        Role::factory()->create(['name' => 'masyarakat']);
+        Role::firstOrCreate(['name' => 'masyarakat']);
 
         $response = $this->postJson('/api/register', [
             'name' => 'Test',
