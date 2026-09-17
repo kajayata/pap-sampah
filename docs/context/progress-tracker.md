@@ -32,6 +32,7 @@ Update this file after every meaningful implementation change.
   - Card Pemantauan Tim Pembersihan: Menampilkan status masing-masing petugas (PENDING, ACCEPTED, REJECTED + alasan, COMPLETED)
   - Galeri Perbandingan Bukti Foto: Tab perbandingan foto kondisi awal laporan warga vs foto hasil pembersihan petugas (BEFORE & AFTER)
   - Panel Aksi Verifikasi: Tombol persetujuan final (RESOLVED) dan tombol permintaan pembersihan ulang
+  - Fix Hak Akses & UX CTA: Role Super Admin tidak menampilkan CTA penugasan (hanya monitoring/info), label diringkas menjadi "Tugaskan Petugas", dan penambahan `@stack('scripts')` di app layout sehingga interaksi modal & script berjalan lancar.
 - [x] Service Upload & Kompresi Foto (`ImageStorageService.php`): auto-orient EXIF kamera, resize proporsional sisi terpanjang maks 1280px, kompresi JPEG quality 70%, batas 10MB, penyimpanan ke storage disk dengan pencatatan metadata file
 - [x] API Kategori Sampah (`GET /api/categories`) untuk pilihan pelaporan di mobile Flutter
 - [x] API Submit Laporan Masyarakat (`POST /api/reports`) dengan validasi PostGIS `ST_Contains` ke 7 kelurahan Sumbersari (Invariant #2: jika di luar wilayah Sumbersari otomatis ditolak HTTP 422)

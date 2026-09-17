@@ -74,15 +74,21 @@
                     </button>
                 </form>
             @elseif($report->isValidated())
-                <!-- Assign Workers Button (Fase 3) -->
-                <button type="button"
-                        onclick="openAssignModal()"
-                        class="px-5 py-2.5 bg-emerald-800 hover:bg-emerald-900 text-white rounded-xl text-sm font-semibold transition shadow-xs flex items-center gap-2 cursor-pointer">
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                    </svg>
-                    Tugaskan Petugas Kebersihan
-                </button>
+                @if(Auth::user()->isVillageAdmin())
+                    <!-- Assign Workers Button (Hanya Admin Desa) -->
+                    <button type="button"
+                            onclick="openAssignModal()"
+                            class="px-4 py-2 bg-emerald-800 hover:bg-emerald-900 text-white rounded-xl text-sm font-semibold transition shadow-xs flex items-center gap-2 cursor-pointer">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                        Tugaskan Petugas
+                    </button>
+                @else
+                    <span class="inline-flex items-center px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                        Menunggu Penugasan Petugas oleh Kelurahan {{ $report->village?->name }}
+                    </span>
+                @endif
             @elseif($report->status === 'PENDING_VERIFICATION')
                 <!-- Rework Request Button -->
                 <button type="button"
@@ -342,11 +348,11 @@
                         </div>
                     </div>
 
-                    @if($report->status !== 'RESOLVED')
+                    @if($report->status !== 'RESOLVED' && Auth::user()->isVillageAdmin())
                         <div class="pt-2 border-t border-slate-100">
                             <button type="button"
                                     onclick="openAssignModal()"
-                                    class="w-full py-2 text-xs font-semibold text-emerald-800 hover:bg-emerald-50 rounded-xl transition border border-emerald-200">
+                                    class="w-full py-2 text-xs font-semibold text-emerald-800 hover:bg-emerald-50 rounded-xl transition border border-emerald-200 cursor-pointer">
                                 Atur Ulang / Tambah Petugas
                             </button>
                         </div>
@@ -470,7 +476,7 @@
 </div>
 
 <!-- Modal Assign Workers (Fase 3) -->
-<div id="assignModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+<div id="assignModal" class="fixed inset-0 z-[60] bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
     <div class="bg-white w-full max-w-lg rounded-2xl shadow-xl border border-slate-200 overflow-hidden transform transition max-h-[90vh] flex flex-col">
         <form method="POST" action="{{ route('reports.assign', $report->id) }}" class="flex flex-col flex-1 overflow-hidden">
             @csrf
@@ -479,7 +485,7 @@
                     <svg class="w-5 h-5 text-emerald-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                     </svg>
-                    Tugaskan Petugas Kebersihan Kelurahan {{ $report->village?->name }}
+                    Tugaskan Petugas Kelurahan {{ $report->village?->name }}
                 </h3>
                 <button type="button" onclick="closeAssignModal()" class="text-slate-400 hover:text-slate-600">
                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -556,8 +562,8 @@
                 </button>
                 <button type="submit"
                         {{ $availableWorkers->isEmpty() ? 'disabled' : '' }}
-                        class="px-5 py-2 rounded-xl text-xs font-semibold bg-emerald-800 hover:bg-emerald-900 text-white transition shadow-xs disabled:opacity-50">
-                    Kirim Penugasan
+                        class="px-5 py-2 rounded-xl text-xs font-semibold bg-emerald-800 hover:bg-emerald-900 text-white transition shadow-xs disabled:opacity-50 cursor-pointer">
+                    Tugaskan Petugas
                 </button>
             </div>
         </form>
@@ -565,7 +571,7 @@
 </div>
 
 <!-- Modal Reject Verification (Minta Pembersihan Ulang) -->
-<div id="rejectVerificationModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+<div id="rejectVerificationModal" class="fixed inset-0 z-[60] bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
     <div class="bg-white w-full max-w-md rounded-2xl shadow-xl border border-slate-200 overflow-hidden transform transition">
         <form method="POST" action="{{ route('reports.reject-verification', $report->id) }}">
             @csrf
@@ -619,7 +625,7 @@
 </div>
 
 <!-- Modal Reject Report (Awal) -->
-<div id="rejectModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+<div id="rejectModal" class="fixed inset-0 z-[60] bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
     <div class="bg-white w-full max-w-md rounded-2xl shadow-xl border border-slate-200 overflow-hidden transform transition">
         <form method="POST" action="{{ route('reports.reject', $report->id) }}">
             @csrf
@@ -673,7 +679,7 @@
 </div>
 
 <!-- Modal Full Image Preview -->
-<div id="imageModal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 hidden" onclick="closeImageModal()">
+<div id="imageModal" class="fixed inset-0 z-[60] bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 hidden" onclick="closeImageModal()">
     <div class="relative max-w-4xl max-h-[90vh]" onclick="event.stopPropagation()">
         <img id="modalImg" src="" alt="Preview Full" class="max-w-full max-h-[85vh] rounded-xl object-contain shadow-2xl">
         <button type="button"

@@ -60,4 +60,14 @@ class User extends Authenticatable
     {
         return $this->role?->name === $roleName;
     }
+
+    public function isSuperAdmin(): bool
+    {
+        return $this->hasRole('super_admin_kecamatan');
+    }
+
+    public function isVillageAdmin(): bool
+    {
+        return $this->hasRole('admin_desa');
+    }
 }
