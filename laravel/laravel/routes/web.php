@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Web\AuthController;
+use App\Http\Controllers\Web\ReportController;
 use App\Http\Controllers\Web\WorkerController;
 use Illuminate\Support\Facades\Route;
 
@@ -19,7 +20,7 @@ Route::middleware('guest')->group(function () {
 
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
 
-// Dashboard & Manajemen Petugas (authenticated only)
+// Dashboard, Petugas, & Laporan (authenticated only)
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [AuthController::class, 'dashboard'])->name('dashboard');
 
@@ -30,4 +31,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/petugas/{id}/edit', [WorkerController::class, 'edit'])->name('petugas.edit');
     Route::put('/petugas/{id}', [WorkerController::class, 'update'])->name('petugas.update');
     Route::patch('/petugas/{id}/toggle-status', [WorkerController::class, 'toggleStatus'])->name('petugas.toggle-status');
+
+    // Manajemen & Validasi Laporan Sampah
+    Route::get('/laporan', [ReportController::class, 'index'])->name('reports.index');
+    Route::get('/laporan/{id}', [ReportController::class, 'show'])->name('reports.show');
+    Route::post('/laporan/{id}/validate', [ReportController::class, 'validateReport'])->name('reports.validate');
+    Route::post('/laporan/{id}/reject', [ReportController::class, 'rejectReport'])->name('reports.reject');
 });

@@ -75,6 +75,9 @@
                     <a href="{{ route('dashboard') }}" class="px-3.5 py-1.5 rounded-xl text-sm font-medium transition-all {{ request()->routeIs('dashboard') ? 'bg-accent-primary text-white font-semibold' : 'text-text-muted hover:text-text-primary hover:bg-base' }}">
                         Dashboard
                     </a>
+                    <a href="{{ route('reports.index') }}" class="px-3.5 py-1.5 rounded-xl text-sm font-medium transition-all {{ request()->routeIs('reports.*') ? 'bg-accent-primary text-white font-semibold' : 'text-text-muted hover:text-text-primary hover:bg-base' }}">
+                        Laporan Sampah
+                    </a>
                     @if(Auth::user()->hasRole('admin_desa') || Auth::user()->hasRole('super_admin_kecamatan'))
                     <a href="{{ route('petugas.index') }}" class="px-3.5 py-1.5 rounded-xl text-sm font-medium transition-all {{ request()->routeIs('petugas.*') ? 'bg-accent-primary text-white font-semibold' : 'text-text-muted hover:text-text-primary hover:bg-base' }}">
                         Petugas Kebersihan

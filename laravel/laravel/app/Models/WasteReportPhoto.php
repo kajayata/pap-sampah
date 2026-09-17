@@ -12,6 +12,8 @@ class WasteReportPhoto extends Model
 
     public const UPDATED_AT = null;
 
+    protected $appends = ['url'];
+
     protected $fillable = [
         'report_id',
         'storage_key',
@@ -22,6 +24,11 @@ class WasteReportPhoto extends Model
         'captured_at',
         'uploaded_by',
     ];
+
+    public function getUrlAttribute(): ?string
+    {
+        return \App\Services\ImageStorageService::getUrl($this->storage_key);
+    }
 
     protected function casts(): array
     {

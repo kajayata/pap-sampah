@@ -174,8 +174,16 @@
             {{-- Recent Reports --}}
             <div class="lg:col-span-2 bg-surface rounded-2xl border border-border-default p-6">
                 <div class="flex items-center justify-between mb-4">
-                    <h2 class="font-display text-xl font-bold text-text-primary">Laporan Terbaru</h2>
-                    <span class="text-xs text-text-muted">Wilayah {{ $user->village?->name }}</span>
+                    <div>
+                        <h2 class="font-display text-xl font-bold text-text-primary">Laporan Terbaru</h2>
+                        <span class="text-xs text-text-muted">Wilayah {{ $user->village?->name }}</span>
+                    </div>
+                    <a href="{{ route('reports.index') }}" class="text-xs font-semibold text-accent-primary hover:underline flex items-center gap-1">
+                        Lihat Semua
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                        </svg>
+                    </a>
                 </div>
 
                 @if($recentReports->isEmpty())
@@ -191,10 +199,10 @@
                 @else
                     <div class="space-y-3">
                         @foreach($recentReports as $rep)
-                            <div class="p-4 rounded-xl bg-base border border-border-default flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 hover:border-accent-primary/30 transition-colors">
+                            <a href="{{ route('reports.show', $rep->id) }}" class="p-4 rounded-xl bg-base border border-border-default flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 hover:border-accent-primary/50 hover:bg-surface transition-all block group">
                                 <div class="space-y-1">
                                     <div class="flex items-center gap-2">
-                                        <span class="font-mono text-xs font-bold text-text-primary">{{ $rep->report_code }}</span>
+                                        <span class="font-mono text-xs font-bold text-text-primary group-hover:text-accent-primary transition-colors">{{ $rep->report_code }}</span>
                                         <span class="text-xs text-text-muted">• {{ $rep->category?->name ?? 'Sampah' }}</span>
                                     </div>
                                     <p class="text-sm text-text-primary line-clamp-1">{{ $rep->description ?: 'Tidak ada deskripsi' }}</p>
@@ -213,7 +221,7 @@
                                         <span class="px-2.5 py-1 rounded-full text-xs font-medium bg-base text-text-muted border border-border-default">{{ $rep->status }}</span>
                                     @endif
                                 </div>
-                            </div>
+                            </a>
                         @endforeach
                     </div>
                 @endif
@@ -265,7 +273,7 @@
                                 <span class="block text-xs text-text-muted">Daftar & atur tim kebersihan</span>
                             </div>
                         </a>
-                        <a href="#" class="flex items-center gap-3 p-3 rounded-xl hover:bg-accent-warning/5 border border-transparent hover:border-accent-warning/15 transition-all duration-200 group">
+                        <a href="{{ route('reports.index', ['status' => 'PENDING_VALIDATION']) }}" class="flex items-center gap-3 p-3 rounded-xl hover:bg-accent-warning/5 border border-transparent hover:border-accent-warning/15 transition-all duration-200 group">
                             <span class="w-9 h-9 bg-accent-warning/10 rounded-xl flex items-center justify-center group-hover:bg-accent-warning/20 transition-colors">
                                 <svg class="w-5 h-5 text-accent-warning" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
