@@ -57,7 +57,66 @@ class AuthController extends Controller
     {
         $user = Auth::user()->load('role', 'village');
 
-        return view('dashboard.index', compact('user'));
+        if ($user->hasRole('super_admin_kecamatan')) {
+            $reportCounts = \Illuminate\Support\Facades\DB::table('waste_reports')
+                ->selectRaw("
+                    count(*) as total,
+                    count(*) filter (where status not in ('RESOLVED', 'REJECTED')) as active,
+                    count(*) filter (where status = 'RESOLVED') as resolved
+                ")
+                ->first();
+
+            $workersCount = \Illuminate\Support\Facades\DB::table('users')
+                ->join('roles', 'users.role_id', '=', 'roles.id')
+                ->where('roles.name', 'petugas_desa')
+                ->where('users.is_active', true)
+                ->count();
+
+            $stats = [
+                'total' => (int) ($reportCounts->total ?? 0),
+                'active' => (int) ($reportCounts->active ?? 0),
+                'resolved' => (int) ($reportCounts->resolved ?? 0),
+                'workers' => $workersCount,
+            ];
+
+            $recentReports = \App\Models\WasteReport::with(['category', 'village', 'reporter'])
+                ->latest('created_at')
+                ->limit(5)
+                ->get();
+        } else {
+            $villageId = $user->village_id;
+
+            $reportCounts = \Illuminate\Support\Facades\DB::table('waste_reports')
+                ->where('village_id', $villageId)
+                ->selectRaw("
+                    count(*) as total,
+                    count(*) filter (where status not in ('RESOLVED', 'REJECTED')) as active,
+                    count(*) filter (where status = 'RESOLVED') as resolved
+                ")
+                ->first();
+
+            $workersCount = \Illuminate\Support\Facades\DB::table('users')
+                ->join('roles', 'users.role_id', '=', 'roles.id')
+                ->where('roles.name', 'petugas_desa')
+                ->where('users.village_id', $villageId)
+                ->where('users.is_active', true)
+                ->count();
+
+            $stats = [
+                'total' => (int) ($reportCounts->total ?? 0),
+                'active' => (int) ($reportCounts->active ?? 0),
+                'resolved' => (int) ($reportCounts->resolved ?? 0),
+                'workers' => $workersCount,
+            ];
+
+            $recentReports = \App\Models\WasteReport::with(['category', 'reporter'])
+                ->where('village_id', $villageId)
+                ->latest('created_at')
+                ->limit(5)
+                ->get();
+        }
+
+        return view('dashboard.index', compact('user', 'stats', 'recentReports'));
     }
 
     private function redirectByRole($user)

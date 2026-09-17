@@ -4,25 +4,28 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
-- Fase 0 Selesai -> Siap masuk Fase 1 (Dashboard Data Real & Manajemen Petugas)
+- Fase 1 Selesai -> Siap masuk Fase 2 (Workflow Pelaporan Sampah & Validasi)
 
 ## Current Goal
 
-- Wire dashboard stats cards to real data & build Petugas management (Admin Desa)
+- Service upload foto & kompresi, API submit laporan sampah (PostGIS check), dan UI validasi laporan (Admin Desa)
 
 ## Completed
 
+- [x] Seeding data wilayah: Kecamatan Sumbersari & 7 Kelurahan (Antirogo, Karangrejo, Kebonsari, Kranjingan, Tegalgede, Wirolegi, Sumbersari) dengan MultiPolygon PostGIS
+- [x] Akun resmi terdaftar: Super Admin Kecamatan (`kec.sumbersari@papsampah.id`) dan 7 Admin Kelurahan (`kel.(namadesa)@papsampah.id`)
+- [x] Akun dummy lama (`admin@sukodono.id` dan `admin@kaliwates.id`) telah dibersihkan dari database
+- [x] Wire dashboard statistik ke data nyata dengan optimasi 1 SQL agregat tunggal (`FILTER WHERE`)
+- [x] Widget Laporan Terbaru dinamis per wilayah desa/kelurahan pada dashboard Admin Desa
+- [x] Fitur CRUD Petugas Kebersihan Desa lengkap (`WorkerController`, form tambah, form edit, toggle aktif/nonaktif)
+- [x] Navigasi navbar responsif terintegrasi dengan link Dashboard dan Petugas Kebersihan
 - [x] Restrukturisasi direktori: `web/laravel/` selesai dan didaftarkan di Git
 - [x] Instalasi dan konfigurasi `laravel/sanctum` untuk Personal Access Token (PAT)
 - [x] Migrasi tabel `personal_access_tokens` dan `remember_token` di database
-- [x] Trait `HasApiTokens` ditambahkan ke model `User`
+- [x] Trait `HasApiTokens` dan relasi domain ditambahkan ke model `User`
 - [x] Controller `App\Http\Controllers\Api\AuthController` diimplementasikan (register, login, logout, me) sesuai api-contract-auth.md
 - [x] Seluruh 12 Model Eloquent domain dibuat (`WasteCategory`, `WasteReport`, `WasteReportPhoto`, `WasteReportStatusHistory`, `CleanupTask`, `CleanupTaskWorker`, `CleanupTaskPhoto`, `Notification`, `WasteBank`, `Landfill`, `News`, `AppSetting`)
-- [x] Verifikasi fungsional API auth dan model via Tinker berhasil
-- [x] Role & seed data (super_admin_kecamatan, admin_desa)
-- [x] Layout updated: design tokens (colors, fonts, borderRadius), Google Fonts, fixed navbar
-- [x] Login page: split layout, brand panel, form with icon inputs, error states
-- [x] Dashboard page: stats cards, role-based layout, sidebar info, quick actions
+- [x] Verifikasi fungsional end-to-end (Admin Desa tambah petugas -> Petugas login mobile API) berhasil
 
 ## In Progress
 
@@ -30,10 +33,10 @@ Update this file after every meaningful implementation change.
 
 ## Next Up
 
-- [ ] Wire dashboard stats to real data (count queries per role di web/laravel/app/Http/Controllers/Web/AuthController.php)
-- [ ] Build CRUD Petugas Kebersihan Desa oleh Admin Desa (Web)
-- [ ] Build laporan submit API (dengan PostGIS boundary validation) & Admin Desa validation workflow UI
-- [ ] Build map/heatmap page
+- [ ] Service Upload & Kompresi Foto (Laravel Proxy ke Supabase Storage, JPEG 1280px ~70%)
+- [ ] API Submit Laporan Masyarakat (`POST /api/reports`) dengan PostGIS boundary ST_Contains
+- [ ] Web UI Validasi Laporan (Admin Desa approve / reject + alasan)
+- [ ] Web UI Pembuatan Cleanup Task & Penugasan Petugas
 - [ ] Mobile Flutter app
 
 ## Open Questions

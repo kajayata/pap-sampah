@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -43,6 +44,16 @@ class User extends Authenticatable
     public function village(): BelongsTo
     {
         return $this->belongsTo(Village::class);
+    }
+
+    public function cleanupTaskWorkers(): HasMany
+    {
+        return $this->hasMany(CleanupTaskWorker::class, 'worker_id');
+    }
+
+    public function wasteReports(): HasMany
+    {
+        return $this->hasMany(WasteReport::class, 'reported_by');
     }
 
     public function hasRole(string $roleName): bool
