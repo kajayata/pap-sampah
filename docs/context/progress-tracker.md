@@ -6,23 +6,11 @@
 > dipertahankan tim, sinkronkan manual ke sini.
 
 ## Status Saat Ini
-
-**Fase:** Perencanaan arsitektur & database — Step 1 (arsitektur inti), Step 2 (versi framework), dan Step 4 (ERD business rules) selesai. Step 3 (Docker) sengaja di-skip dulu. Migration di `laravel/database/migrations/` sudah selaras dengan ERD final, masih berstatus draft/referensi (belum dieksekusi).
-
+-
 ## Unit Kerja Selesai
-
-| Tanggal | Unit | Ringkasan |
-|---|---|---|
-| 2026-09-17 | Fitur Login & Register (backend) | Model User/Role/Village/District, RegisterRequest & LoginRequest, AuthController (register/login/logout/me) via Sanctum, RoleSeeder, factory + feature test (RegisterTest, LoginTest), dan api-contract-auth.md untuk tim mobile. Role hasil register selalu "masyarakat" — role lain tidak bisa dibuat lewat endpoint publik (cegah privilege escalation). Belum dijalankan di environment nyata — menunggu Step 2 & 6 (install Laravel + Sanctum) dieksekusi user. |
-| 2026-09-13 | Database schema (migrations) | 16 migration Laravel dibuat: roles, districts, villages, app_settings, users, waste_categories, waste_reports, waste_report_photos, waste_report_status_histories, cleanup_tasks, cleanup_task_workers, cleanup_task_photos, notifications, waste_banks, landfills, news. Termasuk GiST index untuk semua kolom geometry, CHECK constraint untuk status, dan ON DELETE policy sesuai invariant #8 (architecture.md). Belum di-migrate ke environment nyata — menunggu scaffold Laravel resmi oleh tim (lihat Open Question). |
-
+-
 ## Open Questions (belum jadi keputusan final)
-
-| # | Pertanyaan | Kategori | Catatan |
-|---|---|---|---|
-| 1 | Topologi Docker (service apa saja, dev vs prod) | Technical decision | Sengaja di-skip dulu, prioritas ke Step 4 (database). |
-| 2 | Versi Flutter/Dart SDK final yang dipakai tim mobile | Technical decision | Perlu dikonfirmasi langsung ke tim mobile; stable terkini per referensi kita 3.47.x, tapi bukan keputusan kita. |
-
+-
 ## Keputusan Final (2026-09-13)
 
 | Area | Keputusan | Alasan singkat |

@@ -5,7 +5,7 @@
 | Komponen | Versi | Catatan |
 |---|---|---|
 | PHP | 8.3 | Kompatibel dengan Laravel 12 maupun 13; security support sampai Desember 2027 |
-| Laravel | 12.x | **Keputusan sadar dengan trade-off diketahui**: bug-fix support Laravel 12 sudah berakhir 16 Agustus 2026 (per tanggal keputusan ini), tersisa security-fixes-only sampai Februari 2027. Dipilih tetap Laravel 12 (bukan 13) atas pertimbangan tim di luar faktor technical-support-window. Bug non-keamanan yang ditemukan tidak akan mendapat patch resmi — perlu diwaspadai saat memilih package pihak ketiga. |
+| Laravel | 12.x | **Keputusan sadar dengan trade-off diketahui**: bug-fix support Laravel 12 sudah berakhir 16 Agustus 2026 (per tanggal keputusan ini), tersisa security-fixes-only sampai Februari 2027. |
 | PostgreSQL | 17 | Default terkini Supabase (platform maupun self-hosted), paritas dengan environment dev lokal |
 | PostGIS | 3.5 (pinned di image Docker dev lokal: `postgis/postgis:17-3.5`) | Supabase mengelola versi PostGIS di sisi managed platform secara otomatis; versi 3.5 dipin khusus di container dev lokal supaya perilaku spatial query konsisten dengan production dan menghindari bug "works on my machine" |
 | Flutter | 3.47.x (stable channel) | Versi stable terkini per awal September 2026; harus dikonfirmasi/diselaraskan dengan progres tim mobile yang sudah ada |
