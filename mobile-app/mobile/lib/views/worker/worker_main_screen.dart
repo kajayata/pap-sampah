@@ -3,8 +3,10 @@ import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/cleanup_task.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/notification_provider.dart';
 import '../../providers/worker_task_provider.dart';
 import '../auth/login_screen.dart';
+import '../shared/notifications_screen.dart';
 import 'worker_task_detail_screen.dart';
 
 class WorkerMainScreen extends StatefulWidget {
@@ -22,7 +24,15 @@ class _WorkerMainScreenState extends State<WorkerMainScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<WorkerTaskProvider>(context, listen: false).loadTasks();
+      // Start polling for new task assignments (worker)
+      context.read<NotificationProvider>().startPolling(isCitizen: false);
     });
+  }
+
+  @override
+  void dispose() {
+    context.read<NotificationProvider>().stopPolling();
+    super.dispose();
   }
 
   Future<void> _handleLogout() async {
@@ -91,6 +101,42 @@ class _WorkerMainScreenState extends State<WorkerMainScreen> {
             icon: const Icon(Icons.refresh_rounded),
             tooltip: 'Segarkan',
             onPressed: () => context.read<WorkerTaskProvider>().loadTasks(refresh: true),
+          ),
+          // Notification Bell
+          Consumer<NotificationProvider>(
+            builder: (ctx, notifProv, _) {
+              return Stack(
+                alignment: Alignment.topRight,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.notifications_outlined),
+                    tooltip: 'Notifikasi',
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const NotificationsScreen()),
+                      );
+                    },
+                  ),
+                  if (notifProv.unreadCount > 0)
+                    Positioned(
+                      right: 8,
+                      top: 8,
+                      child: Container(
+                        padding: const EdgeInsets.all(3),
+                        decoration: BoxDecoration(
+                          color: AppTheme.accentDanger,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 1.5),
+                        ),
+                        child: Text(
+                          notifProv.unreadCount > 9 ? '9+' : '${notifProv.unreadCount}',
+                          style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
           ),
           IconButton(
             icon: const Icon(Icons.logout_rounded, size: 20, color: AppTheme.accentDanger),

@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/notification_provider.dart';
 import '../auth/login_screen.dart';
+import '../shared/notifications_screen.dart';
 import 'citizen_home_tab.dart';
 import 'create_report_screen.dart';
 import 'report_list_screen.dart';
@@ -19,6 +21,21 @@ class CitizenMainScreen extends StatefulWidget {
 class _CitizenMainScreenState extends State<CitizenMainScreen> {
   int _currentIndex = 0;
   final GlobalKey<SpatialMapTabState> _mapKey = GlobalKey<SpatialMapTabState>();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Start polling for report status changes (citizen)
+      context.read<NotificationProvider>().startPolling(isCitizen: true);
+    });
+  }
+
+  @override
+  void dispose() {
+    context.read<NotificationProvider>().stopPolling();
+    super.dispose();
+  }
 
   void _onTabSelected(int index) {
     setState(() => _currentIndex = index);
@@ -179,6 +196,42 @@ class _CitizenMainScreenState extends State<CitizenMainScreen> {
           ],
         ),
         actions: [
+          // Notification Bell
+          Consumer<NotificationProvider>(
+            builder: (ctx, notifProv, _) {
+              return Stack(
+                alignment: Alignment.topRight,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.notifications_outlined, color: Colors.white),
+                    tooltip: 'Notifikasi',
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const NotificationsScreen()),
+                      );
+                    },
+                  ),
+                  if (notifProv.unreadCount > 0)
+                    Positioned(
+                      right: 8,
+                      top: 8,
+                      child: Container(
+                        padding: const EdgeInsets.all(3),
+                        decoration: BoxDecoration(
+                          color: AppTheme.accentDanger,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 1.5),
+                        ),
+                        child: Text(
+                          notifProv.unreadCount > 9 ? '9+' : '${notifProv.unreadCount}',
+                          style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
+          ),
           IconButton(
             icon: const CircleAvatar(
               radius: 14,
