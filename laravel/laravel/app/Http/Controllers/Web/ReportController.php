@@ -15,7 +15,8 @@ use Illuminate\View\View;
 class ReportController extends Controller
 {
     public function __construct(
-        protected WasteReportService $wasteReportService
+        protected WasteReportService $wasteReportService,
+        protected \App\Services\CleanupTaskService $cleanupTaskService
     ) {}
 
     /**
@@ -105,7 +106,7 @@ class ReportController extends Controller
                 'photos',
                 'statusHistories.user',
                 'cleanupTask.workers.worker',
-                'cleanupTask.photos',
+                'cleanupTask.photos.uploader',
             ])
             ->findOrFail($id);
 
@@ -114,13 +115,20 @@ class ReportController extends Controller
             abort(403, 'Anda tidak berwenang mengakses laporan di luar wilayah kelurahan Anda.');
         }
 
+        // Available active cleaning workers in this specific village (Invariant #4)
+        $availableWorkers = \App\Models\User::where('village_id', $report->village_id)
+            ->where('is_active', true)
+            ->whereHas('role', fn($q) => $q->where('name', 'petugas_desa'))
+            ->orderBy('name')
+            ->get();
+
         // Fetch village boundary polygon as GeoJSON for Leaflet map display
         $villageGeoJson = DB::table('villages')
             ->where('id', $report->village_id)
             ->selectRaw('ST_AsGeoJSON(boundary) as geojson')
             ->value('geojson');
 
-        return view('reports.show', compact('report', 'villageGeoJson', 'isSuperAdmin'));
+        return view('reports.show', compact('report', 'villageGeoJson', 'isSuperAdmin', 'availableWorkers'));
     }
 
     /**
@@ -162,6 +170,98 @@ class ReportController extends Controller
             return redirect()
                 ->route('reports.show', $id)
                 ->with('success', "Laporan [{$report->report_code}] telah ditolak dengan catatan alasan.");
+        } catch (\Throwable $e) {
+            return redirect()
+                ->route('reports.show', $id)
+                ->with('error', $e->getMessage());
+        }
+    }
+
+    /**
+     * Assign cleanup task to one or more village cleaning workers.
+     */
+    public function assignTask(Request $request, int $id): RedirectResponse
+    {
+        $request->validate([
+            'worker_ids' => ['required', 'array', 'min:1'],
+            'worker_ids.*' => ['required', 'integer', 'exists:users,id'],
+            'notes' => ['nullable', 'string', 'max:1000'],
+        ], [
+            'worker_ids.required' => 'Pilih minimal 1 orang petugas kebersihan desa.',
+            'worker_ids.min' => 'Pilih minimal 1 orang petugas kebersihan desa.',
+            'notes.max' => 'Instruksi dan catatan maksimal 1000 karakter.',
+        ]);
+
+        $report = WasteReport::findOrFail($id);
+
+        try {
+            $this->cleanupTaskService->assignTask(
+                report: $report,
+                admin: $request->user(),
+                workerIds: $request->input('worker_ids'),
+                notes: $request->input('notes')
+            );
+
+            $count = count($request->input('worker_ids'));
+            return redirect()
+                ->route('reports.show', $id)
+                ->with('success', "Tugas pembersihan berhasil dibuat dan ditugaskan kepada {$count} petugas kebersihan desa.");
+        } catch (\Throwable $e) {
+            return redirect()
+                ->route('reports.show', $id)
+                ->with('error', $e->getMessage());
+        }
+    }
+
+    /**
+     * Verify cleanup results and mark report as RESOLVED (Invariant #5 & #6).
+     */
+    public function verifyReport(Request $request, int $id): RedirectResponse
+    {
+        $report = WasteReport::with('cleanupTask')->findOrFail($id);
+
+        if (!$report->cleanupTask) {
+            return redirect()->route('reports.show', $id)->with('error', 'Tugas pembersihan belum dibuat.');
+        }
+
+        try {
+            $this->cleanupTaskService->verifyAndResolve($report->cleanupTask, $request->user());
+
+            return redirect()
+                ->route('reports.show', $id)
+                ->with('success', "Hasil pembersihan telah diverifikasi dan disetujui! Laporan [{$report->report_code}] resmi dinyatakan SELESAI (RESOLVED).");
+        } catch (\Throwable $e) {
+            return redirect()
+                ->route('reports.show', $id)
+                ->with('error', $e->getMessage());
+        }
+    }
+
+    /**
+     * Reject cleanup verification and request rework from cleaning workers.
+     */
+    public function rejectVerification(Request $request, int $id): RedirectResponse
+    {
+        $request->validate([
+            'notes' => ['required', 'string', 'min:5', 'max:500'],
+        ], [
+            'notes.required' => 'Catatan alasan perbaikan/pembersihan ulang wajib diisi.',
+            'notes.min' => 'Catatan minimal 5 karakter.',
+            'notes.max' => 'Catatan maksimal 500 karakter.',
+        ]);
+
+        $report = WasteReport::with('cleanupTask')->findOrFail($id);
+
+        if (!$report->cleanupTask) {
+            return redirect()->route('reports.show', $id)->with('error', 'Tugas pembersihan belum dibuat.');
+        }
+
+        try {
+            $this->cleanupTaskService->rejectVerification($report->cleanupTask, $request->user(), $request->input('notes'));
+
+            return redirect()
+                ->route('reports.show', $id)
+                ->with('success', "Pembersihan ulang telah diminta kepada tim petugas kebersihan dengan catatan perbaikan.");
         } catch (\Throwable $e) {
             return redirect()
                 ->route('reports.show', $id)

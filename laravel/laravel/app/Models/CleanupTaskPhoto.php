@@ -15,6 +15,8 @@ class CleanupTaskPhoto extends Model
     public const TYPE_BEFORE = 'BEFORE';
     public const TYPE_AFTER = 'AFTER';
 
+    protected $appends = ['url'];
+
     protected $fillable = [
         'task_id',
         'type',
@@ -26,6 +28,20 @@ class CleanupTaskPhoto extends Model
         'captured_at',
         'uploaded_by',
     ];
+
+    public function getUrlAttribute(): ?string
+    {
+        return \App\Services\ImageStorageService::getUrl($this->storage_key);
+    }
+
+    public function scopeWithCoordinates($query)
+    {
+        if (empty($query->getQuery()->columns)) {
+            $query->select('cleanup_task_photos.*');
+        }
+
+        return $query->selectRaw('ST_Y(cleanup_task_photos.location) as latitude, ST_X(cleanup_task_photos.location) as longitude');
+    }
 
     protected function casts(): array
     {

@@ -44,8 +44,45 @@ class CleanupTaskWorker extends Model
         return $this->belongsTo(CleanupTask::class, 'task_id');
     }
 
+    protected $appends = ['status_label'];
+
     public function worker(): BelongsTo
     {
         return $this->belongsTo(User::class, 'worker_id');
+    }
+
+    public function getStatusLabelAttribute(): ?string
+    {
+        if (empty($this->status)) {
+            return null;
+        }
+
+        return match ($this->status) {
+            self::STATUS_PENDING => 'Menunggu Konfirmasi',
+            self::STATUS_ACCEPTED => 'Menerima Tugas',
+            self::STATUS_REJECTED => 'Menolak Tugas',
+            self::STATUS_COMPLETED => 'Selesai Dibersihkan',
+            default => (string) $this->status,
+        };
+    }
+
+    public function isPending(): bool
+    {
+        return $this->status === self::STATUS_PENDING;
+    }
+
+    public function isAccepted(): bool
+    {
+        return $this->status === self::STATUS_ACCEPTED;
+    }
+
+    public function isRejected(): bool
+    {
+        return $this->status === self::STATUS_REJECTED;
+    }
+
+    public function isCompleted(): bool
+    {
+        return $this->status === self::STATUS_COMPLETED;
     }
 }

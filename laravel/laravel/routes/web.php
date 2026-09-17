@@ -37,4 +37,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/laporan/{id}', [ReportController::class, 'show'])->name('reports.show');
     Route::post('/laporan/{id}/validate', [ReportController::class, 'validateReport'])->name('reports.validate');
     Route::post('/laporan/{id}/reject', [ReportController::class, 'rejectReport'])->name('reports.reject');
+    Route::post('/laporan/{id}/assign', [ReportController::class, 'assignTask'])->name('reports.assign');
+    Route::post('/laporan/{id}/verify', [ReportController::class, 'verifyReport'])->name('reports.verify');
+    Route::post('/laporan/{id}/reject-verification', [ReportController::class, 'rejectVerification'])->name('reports.reject-verification');
 });

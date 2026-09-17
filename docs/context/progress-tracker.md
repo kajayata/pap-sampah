@@ -4,14 +4,34 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
-- Fase 2 Selesai -> Siap masuk Fase 3 (Penugasan Petugas & Workflow Pembersihan)
+- Fase 3 Selesai -> Siap masuk Fase 4 (Peta/Heatmap Kecamatan, Bank Sampah, TPA, Berita, & Integrasi Mobile)
 
 ## Current Goal
 
-- Pembuatan Cleanup Task, penugasan multiple petugas desa oleh Admin Desa, dan integrasi API mobile Petugas untuk menerima/menolak/memulai pekerjaan.
+- Implementasi Peta Spasial & Heatmap Sebaran Sampah Kecamatan Sumbersari, data Bank Sampah/TPA/Berita, dan integrasi penuh aplikasi mobile Flutter.
 
 ## Completed
 
+- [x] Service Penugasan & Pembersihan (`CleanupTaskService.php`):
+  - Penugasan multi-petugas kebersihan desa dengan catatan instruksi kerja & daftar alat/barang yang perlu dibawa (Invariant #3 & #4)
+  - Penegakan Invariant #4: Petugas hanya dapat ditugaskan pada laporan di wilayah kelurahan operasionalnya
+  - Penanganan respon tugas: Menerima tugas (`acceptTask`) dan menolak tugas dengan alasan wajib (`rejectTask`)
+  - Upload foto bukti before/after pekerjaan pembersihan (`uploadTaskPhoto`)
+  - Penegakan Invariant #3: Tugas hanya berpindah ke `PENDING_VERIFICATION` bila seluruh petugas berstatus `ACCEPTED` telah menyelesaikan pekerjaannya (`completeTaskByWorker`) dengan minimal 1 foto `AFTER`
+  - Verifikasi hasil pembersihan oleh Admin Desa (`verifyAndResolve`) mengubah status laporan menjadi `RESOLVED` (Invariant #5 & #6)
+  - Permintaan pembersihan ulang (`rejectVerification`) mengembalikan status ke `IN_PROGRESS`
+- [x] Mobile REST API Petugas Kebersihan (`WorkerTaskController.php`):
+  - `GET /api/tasks`: Daftar tugas pembersihan petugas yang login
+  - `GET /api/tasks/{id}`: Detail tugas lengkap (laporan, foto, instruksi admin, rekan tim, foto before/after)
+  - `POST /api/tasks/{id}/accept`: Menerima tugas pembersihan
+  - `POST /api/tasks/{id}/reject`: Menolak tugas dengan alasan wajib
+  - `POST /api/tasks/{id}/photos`: Upload foto bukti pembersihan (BEFORE / AFTER)
+  - `POST /api/tasks/{id}/complete`: Menandai tugas selesai dari sisi petugas
+- [x] Web Dashboard Penugasan & Verifikasi (`ReportController.php` & `reports/show.blade.php`):
+  - Modal Form Penugasan: Checklist pemilihan multi-petugas kelurahan aktif & textarea instruksi/perlengkapan kerja admin
+  - Card Pemantauan Tim Pembersihan: Menampilkan status masing-masing petugas (PENDING, ACCEPTED, REJECTED + alasan, COMPLETED)
+  - Galeri Perbandingan Bukti Foto: Tab perbandingan foto kondisi awal laporan warga vs foto hasil pembersihan petugas (BEFORE & AFTER)
+  - Panel Aksi Verifikasi: Tombol persetujuan final (RESOLVED) dan tombol permintaan pembersihan ulang
 - [x] Service Upload & Kompresi Foto (`ImageStorageService.php`): auto-orient EXIF kamera, resize proporsional sisi terpanjang maks 1280px, kompresi JPEG quality 70%, batas 10MB, penyimpanan ke storage disk dengan pencatatan metadata file
 - [x] API Kategori Sampah (`GET /api/categories`) untuk pilihan pelaporan di mobile Flutter
 - [x] API Submit Laporan Masyarakat (`POST /api/reports`) dengan validasi PostGIS `ST_Contains` ke 7 kelurahan Sumbersari (Invariant #2: jika di luar wilayah Sumbersari otomatis ditolak HTTP 422)
@@ -37,7 +57,7 @@ Update this file after every meaningful implementation change.
 - [x] Trait `HasApiTokens` dan relasi domain ditambahkan ke model `User`
 - [x] Controller `App\Http\Controllers\Api\AuthController` diimplementasikan (register, login, logout, me) sesuai api-contract-auth.md
 - [x] Seluruh 12 Model Eloquent domain dibuat (`WasteCategory`, `WasteReport`, `WasteReportPhoto`, `WasteReportStatusHistory`, `CleanupTask`, `CleanupTaskWorker`, `CleanupTaskPhoto`, `Notification`, `WasteBank`, `Landfill`, `News`, `AppSetting`)
-- [x] Verifikasi fungsional end-to-end (Submit laporan masyarakat -> PostGIS detect Sumbersari -> Web validasi Admin Desa -> Mobile fetch updated status) berhasil
+- [x] Verifikasi fungsional end-to-end lengkap (Warga buat laporan -> Admin validasi & tugaskan petugas -> Petugas terima & upload bukti after -> Admin verifikasi RESOLVED) berhasil 100%
 
 ## In Progress
 
@@ -45,11 +65,10 @@ Update this file after every meaningful implementation change.
 
 ## Next Up
 
-- [ ] Web UI Pembuatan Cleanup Task & Penugasan Petugas Kebersihan oleh Admin Desa (Assign single / multiple workers)
-- [ ] Mobile API Petugas Kebersihan: Daftar tugas pembersihan (`GET /api/tasks`), detail tugas, terima tugas (`POST /api/tasks/{id}/accept`), dan tolak tugas (`POST /api/tasks/{id}/reject` + alasan)
-- [ ] Upload bukti progres dan foto hasil pembersihan oleh Petugas
-- [ ] Web UI Verifikasi Hasil Pembersihan oleh Admin Desa (`RESOLVED`)
-- [ ] Mobile Flutter UI integration
+- [ ] Peta Spasial & Heatmap Kecamatan Sumbersari (Titik sampah aktif vs selesai H+7)
+- [ ] Master Data & API Publik: Bank Sampah, TPA, Berita, & Cuaca
+- [ ] Dashboard Monitoring Super Admin Kecamatan
+- [ ] Integrasi Layar Aplikasi Mobile Flutter (Masyarakat & Petugas)
 
 ## Open Questions
 

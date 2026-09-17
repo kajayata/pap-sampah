@@ -54,8 +54,51 @@ class CleanupTask extends Model
         return $this->hasMany(CleanupTaskWorker::class, 'task_id');
     }
 
+    protected $appends = ['status_label'];
+
     public function photos(): HasMany
     {
         return $this->hasMany(CleanupTaskPhoto::class, 'task_id');
+    }
+
+    public function getStatusLabelAttribute(): ?string
+    {
+        if (empty($this->status)) {
+            return null;
+        }
+
+        return match ($this->status) {
+            self::STATUS_ASSIGNED => 'Menunggu Diterima Petugas',
+            self::STATUS_IN_PROGRESS => 'Sedang Dikerjakan',
+            self::STATUS_PENDING_VERIFICATION => 'Menunggu Verifikasi Admin',
+            self::STATUS_VERIFICATION_REJECTED => 'Pembersihan Ulang',
+            self::STATUS_COMPLETED => 'Selesai',
+            default => (string) $this->status,
+        };
+    }
+
+    public function isAssigned(): bool
+    {
+        return $this->status === self::STATUS_ASSIGNED;
+    }
+
+    public function isInProgress(): bool
+    {
+        return $this->status === self::STATUS_IN_PROGRESS;
+    }
+
+    public function isPendingVerification(): bool
+    {
+        return $this->status === self::STATUS_PENDING_VERIFICATION;
+    }
+
+    public function isVerificationRejected(): bool
+    {
+        return $this->status === self::STATUS_VERIFICATION_REJECTED;
+    }
+
+    public function isCompleted(): bool
+    {
+        return $this->status === self::STATUS_COMPLETED;
     }
 }
