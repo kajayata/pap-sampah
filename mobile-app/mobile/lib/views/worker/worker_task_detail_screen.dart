@@ -1,8 +1,10 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/cleanup_task.dart';
 import '../../providers/worker_task_provider.dart';
@@ -552,6 +554,86 @@ class _WorkerTaskDetailScreenState extends State<WorkerTaskDetailScreen> {
               ),
             ],
           ),
+
+          // GPS Coordinates + Maps Button
+          if (rep.latitude != null && rep.longitude != null) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF0FDF4),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: const Color(0xFFBBF7D0)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.my_location_rounded, size: 18, color: AppTheme.primaryColor),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Koordinat GPS', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+                        Text(
+                          '${rep.latitude!.toStringAsFixed(6)}, ${rep.longitude!.toStringAsFixed(6)}',
+                          style: const TextStyle(fontSize: 12, fontFamily: 'monospace', color: AppTheme.textDark),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Copy coordinates
+                  IconButton(
+                    icon: const Icon(Icons.copy_rounded, size: 16, color: AppTheme.textMuted),
+                    tooltip: 'Salin koordinat',
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                    onPressed: () {
+                      Clipboard.setData(
+                        ClipboardData(text: '${rep.latitude}, ${rep.longitude}'),
+                      );
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Koordinat disalin ke clipboard'),
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                    },
+                  ),
+                  // Open in Google Maps
+                  OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppTheme.primaryColor,
+                      side: const BorderSide(color: AppTheme.primaryColor),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                    onPressed: () async {
+                      final lat = rep.latitude!;
+                      final lng = rep.longitude!;
+                      // Try Google Maps app first, fallback to web
+                      final geoUri = Uri.parse('geo:$lat,$lng?q=$lat,$lng(Titik Sampah)');
+                      final mapsUri = Uri.parse('https://maps.google.com/?q=$lat,$lng');
+                      if (await canLaunchUrl(geoUri)) {
+                        await launchUrl(geoUri);
+                      } else if (await canLaunchUrl(mapsUri)) {
+                        await launchUrl(mapsUri, mode: LaunchMode.externalApplication);
+                      } else {
+                        await Clipboard.setData(ClipboardData(text: 'https://maps.google.com/?q=$lat,$lng'));
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Link Google Maps disalin ke clipboard')),
+                          );
+                        }
+                      }
+                    },
+                    icon: const Icon(Icons.map_rounded, size: 14),
+                    label: const Text('Buka Peta', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  ),
+                ],
+              ),
+            ),
+          ],
+
           if (rep.description != null && rep.description!.isNotEmpty) ...[
             const SizedBox(height: 12),
             Text(rep.description!, style: const TextStyle(fontSize: 13, color: Color(0xFF4B5563))),
