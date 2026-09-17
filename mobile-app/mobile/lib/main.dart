@@ -4,6 +4,7 @@ import 'core/theme/app_theme.dart';
 import 'providers/auth_provider.dart';
 import 'providers/public_provider.dart';
 import 'providers/report_provider.dart';
+import 'providers/worker_task_provider.dart';
 import 'views/splash_screen.dart';
 
 void main() {
@@ -21,6 +22,7 @@ class PapSampahApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => ReportProvider()),
         ChangeNotifierProvider(create: (_) => PublicProvider()),
+        ChangeNotifierProvider(create: (_) => WorkerTaskProvider()),
       ],
       child: MaterialApp(
         title: 'Pap Sampah Sumbersari',
