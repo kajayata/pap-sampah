@@ -11,7 +11,7 @@ Modul ini adalah backend REST API dan Web Administration dari platform **Pap Sam
 
 1. **Jalankan Database Docker (dari root project):**
    ```bash
-   cd ../.. && docker compose up -d && cd laravel/laravel
+   cd ../.. && docker compose up -d && cd web/laravel
    ```
 2. **Install Dependencies & Environment:**
    ```bash

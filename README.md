@@ -10,7 +10,7 @@ Selamat datang di repositori monorepo **Pap Sampah**. Dokumen ini dibuat agar se
 ```text
 project-3-polije/
 ├── docker-compose.yml       # Container PostgreSQL 17 + PostGIS 3.5 Spasial
-├── laravel/
+├── web/
 │   └── laravel/             # Backend API (Laravel 12, Sanctum, Web Admin Blade + Leaflet)
 ├── mobile-app/
 │   └── mobile/              # Aplikasi Mobile Warga & Petugas (Flutter SDK)
@@ -59,7 +59,7 @@ docker compose up -d
 
 Masuk ke direktori backend:
 ```bash
-cd laravel/laravel
+cd web/laravel
 ```
 
 #### a. Pasang Dependencies Composer
@@ -194,7 +194,7 @@ Semua password default adalah: `password123`
 
 ### 3. Foto Laporan atau Berita Tidak Muncul (Broken Image / 404)
 - **Penyebab:** Symlink public storage belum terbentuk.
-- **Solusi:** Jalankan di `laravel/laravel`:
+- **Solusi:** Jalankan di `web/laravel`:
   ```bash
   php artisan storage:link
   ```
