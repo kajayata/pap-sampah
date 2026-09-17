@@ -11,7 +11,7 @@ class AuthController extends Controller
     public function showLogin()
     {
         if (Auth::check()) {
-            return $this->redirectByRole();
+            return $this->redirectByRole(Auth::user()->load('role'));
         }
 
         return view('auth.login');
@@ -41,7 +41,7 @@ class AuthController extends Controller
 
         $request->session()->regenerate();
 
-        return $this->redirectByRole();
+        return $this->redirectByRole($user->load('role'));
     }
 
     public function logout(Request $request)
@@ -60,10 +60,8 @@ class AuthController extends Controller
         return view('dashboard.index', compact('user'));
     }
 
-    private function redirectByRole()
+    private function redirectByRole($user)
     {
-        $user = Auth::user();
-
         if ($user->hasRole('super_admin_kecamatan')) {
             return redirect()->route('dashboard');
         }
