@@ -55,8 +55,7 @@
 ## File Organization
 
 - `mobile/` atau struktur aplikasi Flutter — UI, state, service, dan model mobile.
-- `laravel/` atau struktur aplikasi Laravel — website, HTTP layer, business logic, authorization, dan persistence integration.
-- `database/` — migrations, seeders, dan artefak database yang memang dibutuhkan project.
+- `web/laravel/` atau struktur aplikasi Laravel — website, HTTP layer, business logic, authorization, dan persistence integration.
 - `docs/context/` — context project dan keputusan arsitektur; perubahan arsitektur/standards harus disinkronkan di sini.
 
 ## Documentation

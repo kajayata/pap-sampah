@@ -38,8 +38,9 @@
 
 ## Auth and Access Model
 
-- Mekanisme authentication belum ditentukan dan harus diputuskan sebelum implementasi authentication.
+- Mekanisme authentication: Laravel Sanctum (Personal Access Token untuk mobile Flutter, Session/Cookie untuk web dashboard).
 - Role sistem: Super Admin Kecamatan, Admin Desa, Petugas Desa, dan Masyarakat.
+- Registrasi akun: Masyarakat mendaftar mandiri via aplikasi mobile Flutter (`POST /api/register`). Akun Petugas Desa dibuat dan didaftarkan oleh Admin Desa melalui dashboard website; Petugas kemudian login pada aplikasi mobile Flutter menggunakan kredensial tersebut.
 - Admin Desa memiliki scope pada satu desa. Petugas memiliki scope operasional pada desa masing-masing. Super Admin Kecamatan dapat melakukan monitoring seluruh desa dalam satu kecamatan.
 - Masyarakat membuat dan melihat laporan miliknya, serta dapat melihat informasi publik yang memang ditujukan untuk umum.
 - Hanya role yang berwenang yang dapat mengubah status laporan, membuat penugasan, atau melakukan verifikasi sesuai workflow.
@@ -58,12 +59,13 @@
 9. Foto tidak disimpan sebagai binary besar di PostgreSQL; database menyimpan metadata/referensi dan file aktual berada di object/file storage.
 10. Business rule dan authorization tidak boleh hanya bergantung pada client Flutter atau UI website.
 
-## Finalized Architectural Decisions (2026-09-13)
+## Finalized Architectural Decisions (2026-09-13 & 2026-09-17)
 
 - **Authentication:** Laravel Sanctum — Personal Access Token untuk Flutter mobile, session/cookie untuk web dashboard. Satu mekanisme untuk kedua konsumen, tanpa kompleksitas OAuth2 penuh (Passport) atau maintenance token custom (JWT) yang tidak dibutuhkan pada scope MVP ini.
 - **Jalur integrasi:** Semua request terstruktur dari Flutter (laporan, status, assignment, dll) **wajib lewat REST API Laravel**. Flutter tidak mengakses service Supabase secara langsung untuk data terstruktur — ini menjaga invariant #10 (business rule/authorization tidak boleh hanya bergantung pada client) tetap ditegakkan di satu titik (Laravel), bukan terduplikasi di Supabase Row Level Security.
 - **Object storage:** Dikunci ke **Supabase Storage**. Satu vendor dengan data platform yang sudah dipakai, mengurangi kompleksitas operasional untuk tim kecil di tahap MVP.
+- **Upload & Kompresi Media (2026-09-17):** Proxy upload lewat Laravel (Flutter upload multipart ke endpoint Laravel, Laravel melakukan validasi, kompresi/resize, lalu push ke Supabase Storage). Output JPEG, batas resolusi sisi terpanjang maks 1280px, kualitas JPEG ~70, batas upload file asli maks 10MB, retensi permanen tanpa auto-delete.
 
 ## Open Architectural Decisions
 
-- Detail teknis upload foto (apakah lewat presigned URL langsung ke Supabase Storage dengan metadata tetap divalidasi Laravel, atau seluruhnya proxy lewat Laravel) belum diputuskan — akan dibahas saat merancang endpoint upload.
+- Tidak ada keputusan arsitektur terbuka yang blocking saat ini.
