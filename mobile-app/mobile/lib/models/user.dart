@@ -30,10 +30,10 @@ class User {
       roleName = json['role'];
     }
 
-    String? villageName;
+    String? villageName = json['village_name'];
     int? villageId = json['village_id'];
     if (json['village'] is Map) {
-      villageName = json['village']['name'];
+      villageName = json['village']['name'] ?? villageName;
       villageId = json['village']['id'] ?? villageId;
     }
 
