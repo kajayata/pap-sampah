@@ -10,14 +10,8 @@ use App\Http\Controllers\Web\WorkerController;
 use App\Http\Controllers\Web\SampahJemberLandingController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/home', [SampahJemberLandingController::class, 'index'])->name('public.home');
-
-Route::get('/', function () {
-    if (auth()->check()) {
-        return redirect()->route('dashboard');
-    }
-    return redirect()->route('login');
-});
+Route::get('/', [SampahJemberLandingController::class, 'index'])->name('public.home');
+Route::get('/home', [SampahJemberLandingController::class, 'index'])->name('home');
 
 // Auth routes (guest only)
 Route::middleware('guest')->group(function () {

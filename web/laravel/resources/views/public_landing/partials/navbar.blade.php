@@ -2,7 +2,7 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between h-20">
             <!-- Brand Logo -->
-            <a href="#" class="flex items-center gap-3 group">
+            <a href="{{ route('public.home') }}" class="flex items-center gap-3 group">
                 <div class="w-10 h-10 rounded-xl bg-[#ffd65a] text-[#263e1c] flex items-center justify-center font-black text-lg shadow-sm group-hover:scale-105 transition-transform" style="background-color: #ffd65a; color: #263e1c;">
                     SJ
                 </div>
@@ -31,8 +31,24 @@
             </nav>
 
             <!-- CTA Button & Mobile Toggle -->
-            <div class="flex items-center gap-3">
-                <a href="#unduh" class="hidden sm:inline-flex items-center gap-2 px-4 py-2.5 text-sm font-bold rounded-xl bg-[#ffd65a] text-stone-950 hover:bg-[#f3c846] shadow-sm hover:shadow-md transition-all" style="background-color: #ffd65a; color: #0c0a09;">
+            <div class="flex items-center gap-2.5 sm:gap-3">
+                @auth
+                    <a href="{{ route('dashboard') }}" class="inline-flex items-center gap-2 px-3.5 py-2 sm:px-4 sm:py-2.5 text-xs sm:text-sm font-bold rounded-xl bg-white/15 hover:bg-white/25 border border-white/20 text-white backdrop-blur-md shadow-sm transition-all hover:-translate-y-0.5">
+                        <svg class="w-4 h-4 text-[#ffd65a]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                        </svg>
+                        <span>Dashboard</span>
+                    </a>
+                @else
+                    <a href="{{ route('login') }}" class="inline-flex items-center gap-2 px-3.5 py-2 sm:px-4 sm:py-2.5 text-xs sm:text-sm font-bold rounded-xl bg-white/15 hover:bg-white/25 border border-white/20 text-white backdrop-blur-md shadow-sm hover:text-[#ffd65a] transition-all hover:-translate-y-0.5">
+                        <svg class="w-4 h-4 text-[#ffd65a]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/>
+                        </svg>
+                        <span>Login</span>
+                    </a>
+                @endauth
+
+                <a href="#unduh" class="hidden sm:inline-flex items-center gap-2 px-4 py-2.5 text-sm font-bold rounded-xl bg-[#ffd65a] text-stone-950 hover:bg-[#f3c846] shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5" style="background-color: #ffd65a; color: #0c0a09;">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                         <polyline points="7 10 12 15 17 10"/>
@@ -68,7 +84,23 @@
         <a href="#panduan" class="mobile-nav-link block px-4 py-2.5 text-base font-medium text-emerald-100 hover:bg-white/10 rounded-xl transition-colors">
             Panduan Penggunaan
         </a>
-        <div class="pt-2">
+        <div class="pt-2 flex flex-col gap-2.5">
+            @auth
+                <a href="{{ route('dashboard') }}" class="mobile-nav-link flex items-center justify-center gap-2 w-full px-4 py-3 text-base font-bold rounded-xl bg-white/15 text-white hover:bg-white/25 border border-white/20 shadow-sm transition-all">
+                    <svg class="w-5 h-5 text-[#ffd65a]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                    </svg>
+                    <span>Ke Dashboard Admin</span>
+                </a>
+            @else
+                <a href="{{ route('login') }}" class="mobile-nav-link flex items-center justify-center gap-2 w-full px-4 py-3 text-base font-bold rounded-xl bg-white/15 text-white hover:bg-white/25 border border-white/20 shadow-sm transition-all">
+                    <svg class="w-5 h-5 text-[#ffd65a]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/>
+                    </svg>
+                    <span>Login Petugas & Admin</span>
+                </a>
+            @endauth
+
             <a href="#unduh" class="mobile-nav-link flex items-center justify-center gap-2 w-full px-4 py-3 text-base font-bold rounded-xl bg-[#ffd65a] text-stone-950 hover:bg-[#f3c846] shadow-sm transition-all" style="background-color: #ffd65a; color: #0c0a09;">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>

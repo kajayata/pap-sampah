@@ -44,6 +44,15 @@
                     <li>
                         <a href="#unduh" class="hover:text-white hover:underline transition-colors">Unduh Aplikasi Mobile</a>
                     </li>
+                    @auth
+                        <li>
+                            <a href="{{ route('dashboard') }}" class="text-[#ffd65a] hover:underline transition-colors font-medium">Dashboard Admin</a>
+                        </li>
+                    @else
+                        <li>
+                            <a href="{{ route('login') }}" class="text-[#ffd65a] hover:underline transition-colors font-medium">Portal Login Admin & Petugas</a>
+                        </li>
+                    @endauth
                 </ul>
             </div>
 
