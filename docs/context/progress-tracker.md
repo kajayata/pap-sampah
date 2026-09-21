@@ -12,11 +12,8 @@ Update this file after every meaningful implementation change.
 
 ## Completed
 
-<<<<<<< HEAD
 - [x] Public landing website `/home` diselaraskan dengan scope workflow Kecamatan Sumbersari: statistik dan heatmap membaca data laporan aktif dari database per kelurahan, ranking non-MVP dihapus dari alur landing, dan panduan mengikuti alur masyarakat mobile -> validasi Admin Desa -> penanganan petugas -> verifikasi.
 
-=======
->>>>>>> origin/main
 - [x] Peta Spasial & Heatmap Sebaran Sampah (`MapService.php`, `MapApiController.php`, `MapWebController.php`, `map/index.blade.php`):
   - Penegakan Invariant #7: Laporan `RESOLVED` secara ketat tidak dihitung ke heatmap sampah aktif (hanya laporan aktif yang menjadi input heatmap)
   - Penegakan Invariant #8: Mark laporan selesai tetap tampil sementara di peta visualisasi selama periode H+7 (`app_settings.marker_display_days`), dan disembunyikan otomatis setelah masa tampil berakhir tanpa menghapus data laporan maupun foto
@@ -42,7 +39,8 @@ Update this file after every meaningful implementation change.
   - 7 Bank Sampah nyata di 7 kelurahan Sumbersari dengan koordinat PostGIS akurat
   - 2 Fasilitas TPA/TPS-3R rujukan
   - 3 Artikel berita edukasi pengelolaan dan pemilahan sampah
-- [x] Automated Feature Test Suite Fase 4 (`Fase4FeatureTest.php`):
+- [x] Automated F
+eature Test Suite Fase 4 (`Fase4FeatureTest.php`):
   - 100% lulus (20 tests passed, 125 assertions) mencakup seluruh endpoint publik spasial dan web controller
 - [x] Integrasi Navigasi Navbar Web: Link "Peta & Heatmap", "Bank Sampah", "TPA", dan "Berita" responsif di header admin dashboard
 
