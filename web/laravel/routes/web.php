@@ -7,16 +7,11 @@ use App\Http\Controllers\Web\NewsController;
 use App\Http\Controllers\Web\ReportController;
 use App\Http\Controllers\Web\WasteBankController;
 use App\Http\Controllers\Web\WorkerController;
-<<<<<<< HEAD
 use App\Http\Controllers\Web\SampahJemberLandingController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/home', [SampahJemberLandingController::class, 'index'])->name('public.home');
 
-=======
-use Illuminate\Support\Facades\Route;
-
->>>>>>> origin/main
 Route::get('/', function () {
     if (auth()->check()) {
         return redirect()->route('dashboard');
