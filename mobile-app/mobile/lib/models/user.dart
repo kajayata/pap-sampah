@@ -18,7 +18,7 @@ class User {
   });
 
   bool get isMasyarakat => role == 'masyarakat';
-  bool get isPetugas => role == 'petugas_kebersihan';
+  bool get isPetugas => role == 'petugas_kebersihan' || role == 'petugas_desa';
   bool get isSuperAdmin => role == 'super_admin_kecamatan';
   bool get isAdminDesa => role == 'admin_desa';
 

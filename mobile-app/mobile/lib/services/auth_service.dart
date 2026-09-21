@@ -18,9 +18,11 @@ class AuthService {
       },
     );
 
-    if (res['data'] != null && res['data']['token'] != null) {
-      final token = res['data']['token'] as String;
-      final user = User.fromJson(res['data']['user']);
+    final data = (res is Map && res['data'] != null && res['data'] is Map) ? res['data'] : res;
+
+    if (data is Map && data['token'] != null && data['user'] != null) {
+      final token = data['token'] as String;
+      final user = User.fromJson(Map<String, dynamic>.from(data['user']));
       await TokenStorage.saveAuth(token: token, user: user);
       return user;
     }
@@ -46,9 +48,11 @@ class AuthService {
       },
     );
 
-    if (res['data'] != null && res['data']['token'] != null) {
-      final token = res['data']['token'] as String;
-      final user = User.fromJson(res['data']['user']);
+    final data = (res is Map && res['data'] != null && res['data'] is Map) ? res['data'] : res;
+
+    if (data is Map && data['token'] != null && data['user'] != null) {
+      final token = data['token'] as String;
+      final user = User.fromJson(Map<String, dynamic>.from(data['user']));
       await TokenStorage.saveAuth(token: token, user: user);
       return user;
     }
@@ -59,8 +63,9 @@ class AuthService {
   static Future<User?> getCurrentUser() async {
     try {
       final res = await ApiClient.get(ApiConstants.me);
-      if (res['data'] != null) {
-        final user = User.fromJson(res['data']);
+      final data = (res is Map && res['data'] != null) ? res['data'] : (res is Map && res['user'] != null ? res['user'] : res);
+      if (data is Map) {
+        final user = User.fromJson(Map<String, dynamic>.from(data));
         final token = await TokenStorage.getToken();
         if (token != null) {
           await TokenStorage.saveAuth(token: token, user: user);

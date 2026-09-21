@@ -18,6 +18,11 @@ use Illuminate\Support\Facades\Route;
 */
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
+// Alias with /auth prefix for mobile client compatibility
+Route::prefix('auth')->group(function () {
+    Route::post('/register', [AuthController::class, 'register']);
+    Route::post('/login', [AuthController::class, 'login']);
+});
 
 /*
 |--------------------------------------------------------------------------
@@ -55,6 +60,10 @@ Route::get('/settings', [PublicInfoApiController::class, 'settings']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
+    Route::prefix('auth')->group(function () {
+        Route::post('/logout', [AuthController::class, 'logout']);
+        Route::get('/me', [AuthController::class, 'me']);
+    });
 
     // Waste Reports (Citizens & Workers)
     Route::get('/reports', [WasteReportController::class, 'index']);
