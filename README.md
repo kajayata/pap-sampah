@@ -12,7 +12,8 @@ Selamat datang di repositori monorepo **Pap Sampah**. Dokumen ini disusun sebaga
 - [Prasyarat Sistem (Prerequisites)](#-prasyarat-sistem-prerequisites)
 - [Langkah Setup Monorepo](#-langkah-setup-monorepo)
   - [1. Clone Repositori](#1-clone-repositori)
-  - [2. Jalankan Database PostgreSQL & PostGIS (Docker)](#2-jalankan-database-postgresql--postgis-docker)
+  - [2. Jalankan Database PostgreSQL, PostGIS & pgAdmin 4 (Docker)](#2-jalankan-database-postgresql-postgis--pgadmin-4-docker)
+    - [Manajemen Database via pgAdmin 4 (Web GUI)](#-manajemen-database-via-pgadmin-4-web-gui-seperti-phpmyadmin)
   - [3. Setup Backend & Web Admin Laravel](#3-setup-backend--web-admin-laravel)
   - [4. Setup Aplikasi Mobile Flutter](#4-setup-aplikasi-mobile-flutter-untuk-tim-mobile)
 - [Panduan Menghubungkan HP / Mobile ke Backend](#-panduan-menghubungkan-hp--mobile-ke-backend)
@@ -31,7 +32,7 @@ Selamat datang di repositori monorepo **Pap Sampah**. Dokumen ini disusun sebaga
 
 ```text
 project-3-polije/
-├── docker-compose.yml       # PostgreSQL 17 + PostGIS 3.5 (Spasial)
+├── docker-compose.yml       # PostgreSQL 17 + PostGIS 3.5 (Spasial) & pgAdmin 4 (GUI Database)
 ├── web/
 │   └── laravel/             # Backend REST API (Sanctum) + Web Admin (Blade, Tailwind, Leaflet)
 ├── mobile-app/
@@ -47,7 +48,7 @@ project-3-polije/
 Pastikan peralatan berikut sudah terpasang di laptop Anda:
 
 1. **Git**
-2. **Docker & Docker Compose** (Wajib untuk PostgreSQL 17 + ekstensi PostGIS spasial)
+2. **Docker & Docker Compose** (Wajib untuk PostgreSQL 17 + ekstensi PostGIS spasial & pgAdmin 4)
 3. **PHP >= 8.2** (Disarankan PHP 8.2 atau 8.3)
    - Ekstensi PHP wajib aktif: `pdo_pgsql`, `pgsql`, `mbstring`, `fileinfo`, `gd`, `zip`, `openssl`, `curl`
 4. **Composer >= 2.x**
@@ -71,7 +72,7 @@ cd project-3-polije
 
 ---
 
-### 2. Jalankan Database PostgreSQL & PostGIS (Docker)
+### 2. Jalankan Database PostgreSQL, PostGIS & pgAdmin 4 (Docker)
 Aplikasi ini membutuhkan database spasial **PostGIS** untuk kalkulasi batas poligon 7 kelurahan Sumbersari, verifikasi koordinat laporan warga (`ST_Contains`), titik fasilitas bank sampah/TPA, dan heatmap kepadatan sampah.
 
 Dari **root direktori repositori** (`project-3-polije/`), jalankan:
@@ -79,7 +80,29 @@ Dari **root direktori repositori** (`project-3-polije/`), jalankan:
 docker compose up -d
 ```
 
-> **Verifikasi:** Jalankan `docker ps`. Pastikan container `papsampah-postgis` berstatus *Up (healthy)* dan memetakan port `5432:5432`.
+> **Verifikasi:** Jalankan `docker ps`. Pastikan container `papsampah-postgis` (port `5432`) dan `papsampah-pgadmin` (port `5050`) berstatus *Up*.
+
+#### 🐘 Manajemen Database via pgAdmin 4 (Web GUI seperti phpMyAdmin)
+Untuk melihat struktur tabel, menjalankan query, atau melihat isi data tabel di browser:
+
+1. Buka browser: **[http://localhost:5050](http://localhost:5050)**
+2. **Login Akun pgAdmin:**
+   - **Email:** `admin@admin.com`
+   - **Password:** `admin`
+3. **Koneksikan ke Database (Cukup sekali di awal):**
+   - Klik kanan folder **Servers** di panel kiri ➔ pilih **Register > Server...**
+   - Tab **General**: Isi nama koneksi, misal `PapSampah PostGIS`.
+   - Tab **Connection**:
+     - **Host name/address:** `postgres` *(nama service container di docker)*
+     - **Port:** `5432`
+     - **Maintenance database:** `papsampah`
+     - **Username:** `postgres`
+     - **Password:** `postgres`
+     - Centang opsi **Save password?** lalu klik **Save**.
+4. **Cara Melihat Isi Data Tabel (Seperti Tab *Browse* di phpMyAdmin):**
+   - Pada panel kiri, buka: `Servers` ➔ `PapSampah PostGIS` ➔ `Databases` ➔ `papsampah` ➔ `Schemas` ➔ `public` ➔ `Tables`.
+   - **Klik kanan** pada tabel yang ingin dicek (misal `users`, `reports`, `categories`) ➔ pilih **View/Edit Data** ➔ **All Rows**.
+   - *(Fitur Khusus PostGIS)*: Jika tabel memiliki kolom koordinat spasial (`geometry`), klik ikon **Geometry Viewer** (ikon mata/bola dunia di header kolom) untuk melihat titik koordinat langsung di peta OpenStreetMap.
 
 ---
 
