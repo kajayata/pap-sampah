@@ -1,6 +1,6 @@
 @extends('layouts.public_landing')
 
-@section('title', 'SampahJember — Platform Pemantauan Sampah Liar Terpadu Kabupaten Jember')
+@section('title', 'PapSampah — Platform Pemantauan Sampah Liar Terpadu Kabupaten Jember')
 
 @section('content')
     {{-- 1. Hero Section (Latar Hijau Hutan & Statistik Kaca Mengambang) --}}

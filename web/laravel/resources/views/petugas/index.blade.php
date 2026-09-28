@@ -98,7 +98,7 @@
             </div>
         @else
             <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
+                <table class="min-w-[960px] w-full text-left border-collapse">
                     <thead>
                         <tr class="border-b border-border-default bg-base/50 text-xs font-semibold text-text-muted uppercase tracking-wider">
                             <th class="py-3.5 px-6">Petugas</th>

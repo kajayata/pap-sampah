@@ -40,7 +40,6 @@
             }
         }
     </script>
-
     <style>
         body { font-family: 'Outfit', sans-serif; }
         h1, h2, h3, .font-display { font-family: 'Fraunces', serif; }

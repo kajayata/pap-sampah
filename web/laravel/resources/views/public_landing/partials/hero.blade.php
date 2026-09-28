@@ -18,7 +18,7 @@
                 </div>
 
                 <!-- Main Heading (Fraunces Serif) -->
-                <h1 class="text-4xl sm:text-5xl md:text-6xl font-black tracking-tight leading-[1.1] font-fraunces" style="font-family: 'Fraunces', Georgia, serif;">
+                <h1 class="text-4xl sm:text-5xl md:text-6xl font-black tracking-tight leading-[1.1] font-fraunces">
                     Bersama Jaga <br class="hidden sm:block">
                     <span class="text-[#ffd65a]">Kebersihan</span> Jember
                 </h1>

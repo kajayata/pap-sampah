@@ -63,7 +63,7 @@
     <!-- Table of Articles -->
     <div class="bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden">
         <div class="overflow-x-auto">
-            <table class="w-full text-left text-xs">
+            <table class="min-w-[900px] w-full text-left text-xs">
                 <thead class="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200 uppercase tracking-wider text-2xs">
                     <tr>
                         <th class="px-5 py-3.5">Judul & Cuplikan</th>
@@ -96,11 +96,11 @@
                             <td class="px-5 py-4 text-slate-700">
                                 <div class="font-medium text-slate-900">{{ $article->author?->name ?? 'Admin' }}</div>
                                 @if($article->author?->isSuperAdmin())
-                                    <span class="inline-block mt-0.5 px-2 py-0.5 rounded-md text-2xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                                    <span class="inline-flex whitespace-nowrap mt-0.5 px-2 py-0.5 rounded-md text-2xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">
                                         Kecamatan Sumbersari
                                     </span>
                                 @elseif($article->author?->village)
-                                    <span class="inline-block mt-0.5 px-2 py-0.5 rounded-md text-2xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                                    <span class="inline-flex whitespace-nowrap mt-0.5 px-2 py-0.5 rounded-md text-2xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
                                         Kelurahan {{ $article->author->village->name }}
                                     </span>
                                 @endif

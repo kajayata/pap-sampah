@@ -23,15 +23,15 @@ Update this file after every meaningful implementation change.
 - [x] Master Data & REST API Publik Bank Sampah (`WasteBankApiController.php`, `WasteBankController.php`, `waste_banks/`):
   - Model `WasteBank` dengan accessor koordinat spasial PostGIS (`latitude`, `longitude`, `withCoordinates()`)
   - REST API: `GET /api/waste-banks` dan `GET /api/waste-banks/{id}` lengkap dengan relasi kelurahan dan kontak
-  - Web Admin: CRUD Bank Sampah interaktif dengan picker koordinat Leaflet.js drag-and-drop
+  - Web Admin: CRUD Bank Sampah interaktif dengan picker koordinat Leaflet.js drag-and-drop dan tabel daftar yang dapat digulir horizontal pada layar sempit
 - [x] Master Data & REST API Publik TPA / TPS-3R (`LandfillApiController.php`, `LandfillController.php`, `landfills/`):
   - Model `Landfill` dengan accessor koordinat spasial PostGIS (`latitude`, `longitude`, `withCoordinates()`)
   - REST API: `GET /api/landfills` dan `GET /api/landfills/{id}`
-  - Web Admin: CRUD Fasilitas TPA & TPS-3R dengan picker koordinat peta
+  - Web Admin: CRUD Fasilitas TPA & TPS-3R dengan picker koordinat peta dan tabel daftar yang dapat digulir horizontal pada layar sempit
 - [x] Master Data & REST API Publik Berita Edukasi Lingkungan (`NewsApiController.php`, `NewsController.php`, `news/`):
   - Model `News` dengan accessor `thumbnail_url` via `ImageStorageService`, status `DRAFT`/`PUBLISHED`/`ARCHIVED`, dan auto-slug generator
   - REST API: `GET /api/news` (pagination, search, scope published) dan `GET /api/news/{slug}`
-  - Web Admin: CRUD Berita edukasi lengkap dengan upload thumbnail kompresi
+  - Web Admin: CRUD Berita edukasi lengkap dengan upload thumbnail kompresi dan tabel daftar yang dapat digulir horizontal pada layar sempit
 - [x] REST API Cuaca Terkini & Konfigurasi Publik (`WeatherService.php`, `PublicInfoApiController.php`):
   - `GET /api/weather`: Integrasi cuaca real-time Open-Meteo untuk Kecamatan Sumbersari (-8.172, 113.715) dengan caching 30 menit dan fallback tropical weather
   - `GET /api/settings`: Pengaturan konfigurasi publik (`marker_display_days: 7`, dll)
@@ -42,7 +42,7 @@ Update this file after every meaningful implementation change.
 - [x] Automated F
 eature Test Suite Fase 4 (`Fase4FeatureTest.php`):
   - 100% lulus (20 tests passed, 125 assertions) mencakup seluruh endpoint publik spasial dan web controller
-- [x] Integrasi Navigasi Navbar Web: Link "Peta & Heatmap", "Bank Sampah", "TPA", dan "Berita" responsif di header admin dashboard
+- [x] Integrasi Navigasi Sidebar Admin Web: Link Dashboard, Peta & Heatmap, Laporan, Petugas, Bank Sampah, TPA, dan Berita tersedia di sidebar responsif desktop/mobile dengan menu sesuai role
 
 - [x] Service Penugasan & Pembersihan (`CleanupTaskService.php`):
   - Penugasan multi-petugas kebersihan desa dengan catatan instruksi kerja & daftar alat/barang yang perlu dibawa (Invariant #3 & #4)
@@ -71,20 +71,20 @@ eature Test Suite Fase 4 (`Fase4FeatureTest.php`):
 - [x] API Riwayat Laporan Masyarakat (`GET /api/reports`) dan detail laporan (`GET /api/reports/{id}`) dengan pagination, URL foto publik, dan audit trail status
 - [x] Accessor spasial `latitude`, `longitude`, `status_label` dan scope `withCoordinates()` pada model `WasteReport`
 - [x] Web Controller Laporan (`ReportController.php`): Filter status tabs, filter kelurahan (khusus Super Admin), pencarian, dan pagination
-- [x] Web UI Daftar Laporan (`reports/index.blade.php`): Card laporan dengan thumbnail foto, badge status, info pelapor, koordinat, dan filter dinamis
-- [x] Web UI Detail Laporan (`reports/show.blade.php`): Galeri foto dengan modal zoom, peta interaktif Leaflet.js dengan boundary polygon kelurahan, timeline status, dan modal aksi validasi/penolakan
+- [x] Web UI Daftar Laporan (`reports/index.blade.php`): Card laporan dengan thumbnail foto, badge status, info pelapor, koordinat, filter dinamis, dan safe spacing responsif mengikuti container admin
+- [x] Web UI Detail Laporan (`reports/show.blade.php`): Galeri foto dengan modal zoom, peta interaktif Leaflet.js dengan boundary polygon kelurahan, timeline status, modal aksi validasi/penolakan, dan safe spacing responsif mengikuti container admin
 - [x] Web Aksi Validasi Laporan: Admin Kelurahan menyetujui laporan (`POST /laporan/{id}/validate`) -> status berubah ke `VALIDATED`
 - [x] Web Aksi Penolakan Laporan: Admin Kelurahan menolak laporan (`POST /laporan/{id}/reject`) dengan catatan alasan wajib -> status berubah ke `REJECTED`
 - [x] Proteksi Otorisasi Wilayah: Admin Kelurahan A tidak dapat melihat/memvalidasi laporan milik Kelurahan B (HTTP 403)
-- [x] Integrasi Navigasi & Dashboard: Menu "Laporan Sampah" di navbar dan integrasi link cepat pada widget laporan dashboard
+- [x] Integrasi Navigasi & Dashboard: Menu "Laporan Sampah" di sidebar dan integrasi link cepat pada widget laporan dashboard
 - [x] Setup database dev lokal Docker PostGIS 3.5 pada PostgreSQL 17 (latensi turun dari ~100ms remote Sydney menjadi ~3ms)
 - [x] Seeding data wilayah: Kecamatan Sumbersari & 7 Kelurahan (Antirogo, Karangrejo, Kebonsari, Kranjingan, Tegalgede, Wirolegi, Sumbersari) dengan MultiPolygon PostGIS
 - [x] Akun resmi terdaftar: Super Admin Kecamatan (`kec.sumbersari@papsampah.id`) dan 7 Admin Kelurahan (`kel.(namadesa)@papsampah.id`)
 - [x] Akun dummy lama (`admin@sukodono.id` dan `admin@kaliwates.id`) telah dibersihkan dari database
 - [x] Wire dashboard statistik ke data nyata dengan optimasi 1 SQL agregat tunggal (`FILTER WHERE`)
 - [x] Widget Laporan Terbaru dinamis per wilayah desa/kelurahan pada dashboard Admin Desa
-- [x] Fitur CRUD Petugas Kebersihan Desa lengkap (`WorkerController`, form tambah, form edit, toggle aktif/nonaktif)
-- [x] Navigasi navbar responsif terintegrasi dengan link Dashboard dan Petugas Kebersihan
+- [x] Fitur CRUD Petugas Kebersihan Desa lengkap (`WorkerController`, form tambah, form edit, toggle aktif/nonaktif), dengan tabel daftar yang dapat digulir horizontal pada layar sempit
+- [x] Navigasi sidebar responsif terintegrasi dengan link Dashboard dan Petugas Kebersihan
 - [x] Instalasi dan konfigurasi `laravel/sanctum` untuk Personal Access Token (PAT)
 - [x] Migrasi tabel `personal_access_tokens` dan `remember_token` di database
 - [x] Trait `HasApiTokens` dan relasi domain ditambahkan ke model `User`

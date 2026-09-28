@@ -32,7 +32,7 @@
     <!-- Table of Landfills -->
     <div class="bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden">
         <div class="overflow-x-auto">
-            <table class="w-full text-left text-xs">
+            <table class="min-w-[960px] w-full text-left text-xs">
                 <thead class="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200 uppercase tracking-wider text-2xs">
                     <tr>
                         <th class="px-5 py-3.5">Nama Fasilitas</th>
@@ -51,7 +51,7 @@
                                 <div class="text-2xs text-slate-500 line-clamp-1 mt-0.5">{{ $lf->description ?: 'Tidak ada deskripsi tambahan.' }}</div>
                             </td>
                             <td class="px-5 py-4">
-                                <span class="px-2.5 py-1 rounded-md text-2xs font-semibold bg-indigo-50 text-indigo-800 border border-indigo-200">
+                                <span class="inline-flex whitespace-nowrap px-2.5 py-1 rounded-md text-2xs font-semibold bg-indigo-50 text-indigo-800 border border-indigo-200">
                                     Kelurahan {{ $lf->village?->name }}
                                 </span>
                             </td>

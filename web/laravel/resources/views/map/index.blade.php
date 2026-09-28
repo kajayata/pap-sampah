@@ -5,7 +5,6 @@
 @push('head')
 <!-- Leaflet CSS (Local with CDN fallback) -->
 <link rel="stylesheet" href="{{ asset('vendor/leaflet/leaflet.css') }}" onerror="this.onerror=null;this.href='https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css'">
-
 <style>
     .leaflet-popup-content-wrapper {
         border-radius: 1rem;

@@ -44,6 +44,9 @@
                     <li>
                         <a href="#unduh" class="hover:text-white hover:underline transition-colors">Unduh Aplikasi Mobile</a>
                     </li>
+                    <li>
+                        <a href="https://kecamatansumbersari.jemberkab.go.id/" class="hover:text-white hover:underline transition-colors">Website Resmi</a>
+                    </li>
                     @auth
                         <li>
                             <a href="{{ route('dashboard') }}" class="text-[#ffd65a] hover:underline transition-colors font-medium">Dashboard Admin</a>
@@ -66,12 +69,13 @@
                     </div>
                     <div class="flex items-center gap-2.5">
                         <span class="text-base">📧</span>
-                        <a href="mailto:dlh@jemberkab.go.id" class="hover:text-white transition-colors">dlh@jemberkab.go.id</a>
+                        <a href="kec.sumbersari@jemberkab.go.id" class="hover:text-white transition-colors">kec.sumbersari@jemberkab.go.id</a>
                     </div>
                     <div class="flex items-center gap-2.5">
                         <span class="text-base">📞</span>
-                        <span>(0331) 123-4567</span>
+                        <span>0821-3960-8707 / 0851-7718-00487</span>
                     </div>
+
                 </div>
             </div>
         </div>
