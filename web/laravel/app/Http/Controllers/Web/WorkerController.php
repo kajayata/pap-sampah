@@ -95,15 +95,42 @@ class WorkerController extends Controller
             : $request->village_id;
 
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
+            // 1. Nama wajib string & tidak boleh diawali angka
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                'regex:/^[a-zA-Z\s][a-zA-Z0-9\s._-]*$/'
+            ],
+            // 2. Email wajib unik di tabel users
+            'email' => [
+                'required',
+                'string',
+                'email',
+                'max:255',
+                'unique:users,email'
+            ],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
-            'phone' => ['nullable', 'string', 'max:20'],
+            // 3. Nomor telepon harus unik, berupa angka, dan diawali 08
+            'phone' => [
+                'required',
+                'string',
+                'numeric',
+                'digits_between:10,15',
+                'regex:/^08[0-9]+$/',
+                'unique:users,phone'
+            ],
             'village_id' => $user->hasRole('super_admin_kecamatan')
                 ? ['required', 'exists:villages,id']
                 : ['nullable'],
         ], [
+            'name.regex' => 'Nama petugas tidak boleh diawali dengan angka.',
             'email.unique' => 'Email ini sudah terdaftar dalam sistem.',
+            'phone.required' => 'Nomor telepon wajib diisi.',
+            'phone.numeric' => 'Nomor telepon harus berupa angka.',
+            'phone.digits_between' => 'Nomor telepon harus berisi antara 10 hingga 15 digit.',
+            'phone.regex' => 'Nomor telepon harus diawali dengan 08.',
+            'phone.unique' => 'Nomor telepon ini sudah terdaftar dalam sistem.',
             'password.min' => 'Kata sandi minimal 8 karakter.',
             'password.confirmed' => 'Konfirmasi kata sandi tidak cocok.',
         ]);
@@ -114,7 +141,7 @@ class WorkerController extends Controller
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => $validated['password'],
-            'phone' => $validated['phone'] ?? null,
+            'phone' => $validated['phone'],
             'is_active' => true,
         ]);
 
@@ -152,9 +179,26 @@ class WorkerController extends Controller
         $this->validateWorkerScope($user, $worker);
 
         $rules = [
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($worker->id)],
-            'phone' => ['nullable', 'string', 'max:20'],
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                'regex:/^[a-zA-Z\s][a-zA-Z0-9\s._-]*$/'
+            ],
+            'email' => [
+                'required',
+                'email',
+                'max:255',
+                Rule::unique('users', 'email')->ignore($worker->id)
+            ],
+            'phone' => [
+                'required',
+                'string',
+                'numeric',
+                'digits_between:10,15',
+                'regex:/^08[0-9]+$/',
+                Rule::unique('users', 'phone')->ignore($worker->id)
+            ],
             'is_active' => ['required', 'boolean'],
         ];
 
@@ -167,7 +211,13 @@ class WorkerController extends Controller
         }
 
         $validated = $request->validate($rules, [
+            'name.regex' => 'Nama petugas tidak boleh diawali dengan angka.',
             'email.unique' => 'Email ini sudah digunakan oleh pengguna lain.',
+            'phone.required' => 'Nomor telepon wajib diisi.',
+            'phone.numeric' => 'Nomor telepon harus berupa angka.',
+            'phone.digits_between' => 'Nomor telepon harus berisi antara 10 hingga 15 digit.',
+            'phone.regex' => 'Nomor telepon harus diawali dengan 08.',
+            'phone.unique' => 'Nomor telepon ini sudah digunakan oleh pengguna lain.',
             'password.min' => 'Kata sandi minimal 8 karakter.',
             'password.confirmed' => 'Konfirmasi kata sandi tidak cocok.',
         ]);
@@ -175,7 +225,7 @@ class WorkerController extends Controller
         $updateData = [
             'name' => $validated['name'],
             'email' => $validated['email'],
-            'phone' => $validated['phone'] ?? null,
+            'phone' => $validated['phone'],
             'is_active' => (bool) $validated['is_active'],
         ];
 

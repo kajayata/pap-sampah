@@ -5,22 +5,22 @@
 @section('content')
 <div class="max-w-3xl mx-auto px-6 py-8">
 
-    {{-- Breadcrumb --}}
-    <div class="flex items-center gap-2 text-xs font-medium text-text-muted mb-4">
-        <a href="{{ route('dashboard') }}" class="hover:text-accent-primary transition-colors">Dashboard</a>
-        <span>/</span>
-        <a href="{{ route('petugas.index') }}" class="hover:text-accent-primary transition-colors">Petugas Kebersihan</a>
-        <span>/</span>
-        <span class="text-text-primary">Tambah Baru</span>
-    </div>
-
-    {{-- Header --}}
-    <div class="mb-8">
-        <h1 class="font-display text-3xl font-bold text-text-primary">Tambah Petugas Kebersihan</h1>
-        <p class="text-text-muted text-sm mt-1">
-            Daftarkan akun petugas kebersihan desa baru. Akun ini akan digunakan oleh petugas untuk login dan menjalankan tugas pada aplikasi mobile Flutter.
+    <div class="flex items-center gap-3">
+        <a href="{{ route('petugas.index') }}"
+           class="p-2 rounded-xl bg-white border border-slate-200 text-slate-600 hover:text-slate-900 transition">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+        </a>
+        <div class="mb-8">
+        <h1 class="text-2xl font-bold font-serif text-slate-900">Tambah Petugas Kebersihan</h1>
+        <p class="text-xs text-slate-500">
+            Daftarkan akun petugas kebersihan desa baru. 
         </p>
     </div>
+    </div>
+    {{-- Header --}}
+    
 
     {{-- Form Card --}}
     <div class="bg-surface rounded-3xl border border-border-default p-6 sm:p-8 shadow-sm">

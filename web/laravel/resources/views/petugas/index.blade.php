@@ -8,11 +8,6 @@
     {{-- Breadcrumb & Header --}}
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div>
-            <div class="flex items-center gap-2 text-xs font-medium text-text-muted mb-1">
-                <a href="{{ route('dashboard') }}" class="hover:text-accent-primary transition-colors">Dashboard</a>
-                <span>/</span>
-                <span class="text-text-primary">Petugas Kebersihan</span>
-            </div>
             <h1 class="font-display text-3xl font-bold text-text-primary">Petugas Kebersihan Desa</h1>
             <p class="text-text-muted text-sm mt-1">
                 @if(Auth::user()->hasRole('admin_desa'))
