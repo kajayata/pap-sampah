@@ -71,10 +71,19 @@
                                 </form>
                             </td>
                             <td class="px-5 py-4 text-right">
-                                <a href="{{ route('landfills.edit', $lf->id) }}"
-                                   class="px-3 py-1.5 rounded-lg text-2xs font-semibold text-emerald-800 hover:bg-emerald-50 transition border border-emerald-200">
-                                    Edit
-                                </a>
+                                <div class="flex items-center justify-end gap-2">
+                                    <a href="{{ route('landfills.edit', $lf->id) }}"
+                                       class="px-3 py-1.5 rounded-lg text-2xs font-semibold text-emerald-800 hover:bg-emerald-50 transition border border-emerald-200">
+                                        Edit
+                                    </a>
+                                    <form method="POST" action="{{ route('landfills.destroy', $lf->id) }}" onsubmit="return confirm('Yakin ingin menghapus fasilitas TPA / TPS-3R ini?')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="px-2.5 py-1.5 rounded-lg text-2xs font-semibold text-rose-700 hover:bg-rose-50 transition border border-rose-200">
+                                            Hapus
+                                        </button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                     @empty

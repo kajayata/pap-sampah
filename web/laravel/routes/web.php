@@ -51,6 +51,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/bank-sampah', [WasteBankController::class, 'store'])->name('waste-banks.store');
     Route::get('/bank-sampah/{id}/edit', [WasteBankController::class, 'edit'])->name('waste-banks.edit');
     Route::put('/bank-sampah/{id}', [WasteBankController::class, 'update'])->name('waste-banks.update');
+    Route::delete('/bank-sampah/{id}', [WasteBankController::class, 'destroy'])->name('waste-banks.destroy');
     Route::patch('/bank-sampah/{id}/toggle-status', [WasteBankController::class, 'toggleStatus'])->name('waste-banks.toggle-status');
 
     // TPA & TPS-3R
@@ -59,6 +60,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/tpa', [LandfillController::class, 'store'])->name('landfills.store');
     Route::get('/tpa/{id}/edit', [LandfillController::class, 'edit'])->name('landfills.edit');
     Route::put('/tpa/{id}', [LandfillController::class, 'update'])->name('landfills.update');
+    Route::delete('/tpa/{id}', [LandfillController::class, 'destroy'])->name('landfills.destroy');
     Route::patch('/tpa/{id}/toggle-status', [LandfillController::class, 'toggleStatus'])->name('landfills.toggle-status');
 
     // Berita & Edukasi Lingkungan

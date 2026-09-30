@@ -36,7 +36,7 @@
                 <input type="text"
                        name="search"
                        value="{{ request('search') }}"
-                       placeholder="Cari nama atau alamat bank sampah (tekan Enter)..."
+                       placeholder="Cari nama, alamat, telepon, deskripsi, kelurahan, atau status..."
                        class="w-full pl-9 pr-4 py-2 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-emerald-700 focus:outline-none">
                 <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -107,10 +107,19 @@
                                 </form>
                             </td>
                             <td class="px-5 py-4 text-right">
-                                <a href="{{ route('waste-banks.edit', $wb->id) }}"
-                                   class="px-3 py-1.5 rounded-lg text-2xs font-semibold text-emerald-800 hover:bg-emerald-50 transition border border-emerald-200">
-                                    Edit
-                                </a>
+                                <div class="flex items-center justify-end gap-2">
+                                    <a href="{{ route('waste-banks.edit', $wb->id) }}"
+                                       class="px-3 py-1.5 rounded-lg text-2xs font-semibold text-emerald-800 hover:bg-emerald-50 transition border border-emerald-200">
+                                        Edit
+                                    </a>
+                                    <form method="POST" action="{{ route('waste-banks.destroy', $wb->id) }}" onsubmit="return confirm('Yakin ingin menghapus data Bank Sampah ini?')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="px-2.5 py-1.5 rounded-lg text-2xs font-semibold text-rose-700 hover:bg-rose-50 transition border border-rose-200">
+                                            Hapus
+                                        </button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                     @empty

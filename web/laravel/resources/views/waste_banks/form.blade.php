@@ -75,6 +75,9 @@
                        name="phone"
                        id="phone"
                        value="{{ old('phone', $wasteBank->phone) }}"
+                      maxlength="13"
+                      inputmode="numeric"
+                      pattern="[0-9]{1,13}"
                        placeholder="Contoh: 081234567890"
                        class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-emerald-700 focus:outline-none">
                 @error('phone') <span class="text-rose-600 text-2xs mt-1 block">{{ $message }}</span> @enderror

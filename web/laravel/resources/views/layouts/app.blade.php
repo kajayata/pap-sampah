@@ -129,7 +129,7 @@
 
         /* =================================================
            TOP NAVBAR
-           
+
            Sidebar width:
            256px = Tailwind w-64
 
@@ -672,7 +672,7 @@
 
         {{-- =================================================
              TOP NAVBAR
-             
+
              DESKTOP:
              Hanya profile di kanan.
 
@@ -778,7 +778,7 @@
 
             {{-- =================================================
                  PROFILE USER
-                 
+
                  Ini satu-satunya profile di topbar.
             ================================================== --}}
 
@@ -977,7 +977,7 @@
 
             {{-- =================================================
                  LOGO
-                 
+
                  Tinggi tepat 64px.
                  Sejajar dengan topbar.
             ================================================== --}}
@@ -1073,7 +1073,7 @@
 
             {{-- =================================================
                  NAVIGATION
-                 
+
                  TIDAK ADA PROFILE USER DI SINI.
             ================================================== --}}
 
@@ -1418,7 +1418,7 @@
 
     {{-- =====================================================
          MAIN CONTENT
-         
+
          64px top padding:
          mengikuti tinggi topbar.
 
@@ -1444,6 +1444,23 @@
                 >
 
                     {{ session('success') }}
+
+                </div>
+
+            </div>
+
+        @endif
+
+        @if(session('error'))
+
+            <div class="mx-auto mt-4 max-w-7xl px-6">
+
+                <div
+                    role="alert"
+                    class="rounded-2xl border border-rose-300 bg-rose-50 p-4 text-sm font-medium text-rose-800"
+                >
+
+                    {{ session('error') }}
 
                 </div>
 

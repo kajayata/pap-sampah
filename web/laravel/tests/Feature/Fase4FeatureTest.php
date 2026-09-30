@@ -7,6 +7,7 @@ use App\Models\News;
 use App\Models\User;
 use App\Models\WasteBank;
 use App\Models\WasteReport;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class Fase4FeatureTest extends TestCase
@@ -216,6 +217,117 @@ class Fase4FeatureTest extends TestCase
         $this->actingAs($superAdmin)->get('/berita/create')->assertStatus(200);
     }
 
+    public function test_duplicate_waste_bank_is_rejected_with_alert(): void
+    {
+        $superAdmin = User::where('email', 'kec.sumbersari@papsampah.id')->firstOrFail();
+        $wasteBank = WasteBank::firstOrFail();
+        $initialCount = WasteBank::count();
+
+        $this->actingAs($superAdmin)
+            ->from('/bank-sampah/create')
+            ->followingRedirects()
+            ->post('/bank-sampah', [
+                'village_id' => $wasteBank->village_id,
+                'name' => strtoupper($wasteBank->name),
+                'address' => strtoupper($wasteBank->address),
+                'phone' => '081234567890',
+                'latitude' => '-8.1725',
+                'longitude' => '113.7160',
+            ])
+            ->assertOk()
+            ->assertSee('Data sudah ada sebelumnya')
+            ->assertSee('role="alert"', false);
+
+        $this->assertSame($initialCount, WasteBank::count());
+    }
+
+    public function test_duplicate_landfill_is_rejected_with_alert(): void
+    {
+        $superAdmin = User::where('email', 'kec.sumbersari@papsampah.id')->firstOrFail();
+        $landfill = Landfill::firstOrFail();
+        $initialCount = Landfill::count();
+
+        $this->actingAs($superAdmin)
+            ->from('/tpa/create')
+            ->followingRedirects()
+            ->post('/tpa', [
+                'village_id' => $landfill->village_id,
+                'name' => strtoupper($landfill->name),
+                'address' => strtoupper($landfill->address),
+                'latitude' => '-8.1880',
+                'longitude' => '113.7650',
+            ])
+            ->assertOk()
+            ->assertSee('Data sudah ada sebelumnya')
+            ->assertSee('role="alert"', false);
+
+        $this->assertSame($initialCount, Landfill::count());
+    }
+
+    public function test_waste_bank_phone_cannot_exceed_13_digits(): void
+    {
+        $superAdmin = User::where('email', 'kec.sumbersari@papsampah.id')->firstOrFail();
+        $wasteBank = WasteBank::firstOrFail();
+        $initialCount = WasteBank::count();
+
+        $this->actingAs($superAdmin)
+            ->from('/bank-sampah/create')
+            ->post('/bank-sampah', [
+                'village_id' => $wasteBank->village_id,
+                'name' => 'Bank Sampah Phone Test ' . uniqid(),
+                'address' => 'Alamat Pengujian Telepon',
+                'phone' => '08123456789012',
+                'latitude' => '-8.1725',
+                'longitude' => '113.7160',
+            ])
+            ->assertRedirect('/bank-sampah/create')
+            ->assertSessionHasErrors('phone');
+
+        $this->assertSame($initialCount, WasteBank::count());
+    }
+
+    public function test_super_admin_can_delete_waste_bank_and_landfill(): void
+    {
+        $superAdmin = User::where('email', 'kec.sumbersari@papsampah.id')->firstOrFail();
+        $villageId = $superAdmin->village_id ?? WasteBank::firstOrFail()->village_id;
+        $wasteBankName = 'Delete Test Bank ' . uniqid();
+        $landfillName = 'Delete Test Landfill ' . uniqid();
+
+        DB::statement(
+            'INSERT INTO waste_banks (village_id, name, address, phone, description, is_active, location) VALUES (?, ?, ?, ?, ?, ?, ST_SetSRID(ST_Point(?, ?), 4326))',
+            [$villageId, $wasteBankName, 'Alamat Hapus Test', null, null, true, 113.7160, -8.1725]
+        );
+        DB::statement(
+            'INSERT INTO landfills (village_id, name, address, description, is_active, location) VALUES (?, ?, ?, ?, ?, ST_SetSRID(ST_Point(?, ?), 4326))',
+            [$villageId, $landfillName, 'Alamat Hapus Test', null, true, 113.7160, -8.1725]
+        );
+
+        $wasteBankId = WasteBank::where('name', $wasteBankName)->value('id');
+        $landfillId = Landfill::where('name', $landfillName)->value('id');
+
+        $this->actingAs($superAdmin)
+            ->delete(route('waste-banks.destroy', $wasteBankId))
+            ->assertRedirect(route('waste-banks.index'));
+        $this->assertDatabaseMissing('waste_banks', ['id' => $wasteBankId]);
+
+        $this->actingAs($superAdmin)
+            ->delete(route('landfills.destroy', $landfillId))
+            ->assertRedirect(route('landfills.index'));
+        $this->assertDatabaseMissing('landfills', ['id' => $landfillId]);
+    }
+
+    public function test_village_admin_cannot_delete_waste_bank_from_another_village(): void
+    {
+        $adminSumbersari = User::where('email', 'kel.sumbersari@papsampah.id')->firstOrFail();
+        $otherVillageBank = WasteBank::where('village_id', '!=', $adminSumbersari->village_id)->firstOrFail();
+
+        $this->actingAs($adminSumbersari)
+            ->delete(route('waste-banks.destroy', $otherVillageBank->id))
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('waste_banks', ['id' => $otherVillageBank->id]);
+    }
+
     public function test_village_admin_cannot_edit_or_delete_kecamatan_or_other_village_news(): void
     {
         $superAdmin = User::where('email', 'kec.sumbersari@papsampah.id')->firstOrFail();
@@ -316,5 +428,21 @@ class Fase4FeatureTest extends TestCase
         $mapRes->assertStatus(200);
         $mapRes->assertSee('initLeafletMap');
         $mapRes->assertSee('vendor/leaflet/leaflet.js');
+    }
+
+    public function test_waste_bank_search_matches_phone_and_description(): void
+    {
+        $superAdmin = User::where('email', 'kec.sumbersari@papsampah.id')->firstOrFail();
+        $wasteBank = WasteBank::where('phone', '08123456701')->firstOrFail();
+
+        $this->actingAs($superAdmin)
+            ->get('/bank-sampah?search=08123456701')
+            ->assertOk()
+            ->assertSee($wasteBank->name);
+
+        $this->actingAs($superAdmin)
+            ->get('/bank-sampah?search=jelantah')
+            ->assertOk()
+            ->assertSee($wasteBank->name);
     }
 }

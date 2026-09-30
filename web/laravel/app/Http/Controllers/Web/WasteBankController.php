@@ -26,10 +26,22 @@ class WasteBankController extends Controller
         }
 
         if ($request->filled('search')) {
-            $search = '%' . $request->input('search') . '%';
-            $query->where(function ($q) use ($search) {
+            $term = trim($request->input('search'));
+            $search = '%' . $term . '%';
+            $query->where(function ($q) use ($search, $term) {
                 $q->where('name', 'ilike', $search)
-                  ->orWhere('address', 'ilike', $search);
+                  ->orWhere('address', 'ilike', $search)
+                  ->orWhere('phone', 'ilike', $search)
+                  ->orWhere('description', 'ilike', $search)
+                  ->orWhereHas('village', function ($villageQuery) use ($search) {
+                      $villageQuery->where('name', 'ilike', $search);
+                  });
+
+                if (strtolower($term) === 'aktif') {
+                    $q->orWhere('is_active', true);
+                } elseif (strtolower($term) === 'nonaktif') {
+                    $q->orWhere('is_active', false);
+                }
             });
         }
 
@@ -62,12 +74,21 @@ class WasteBankController extends Controller
             'village_id' => ['required', 'integer', 'exists:villages,id'],
             'name' => ['required', 'string', 'max:150'],
             'address' => ['required', 'string', 'max:255'],
-            'phone' => ['nullable', 'string', 'max:30'],
+            'phone' => ['nullable', 'string', 'regex:/^[0-9]{1,13}$/'],
             'description' => ['nullable', 'string', 'max:1000'],
             'latitude' => ['required', 'numeric', 'between:-90,90'],
             'longitude' => ['required', 'numeric', 'between:-180,180'],
             'is_active' => ['boolean'],
         ]);
+
+        $duplicate = WasteBank::where('village_id', $request->input('village_id'))
+            ->whereRaw('LOWER(TRIM(name)) = LOWER(TRIM(?))', [$request->input('name')])
+            ->whereRaw('LOWER(TRIM(address)) = LOWER(TRIM(?))', [$request->input('address')])
+            ->exists();
+
+        if ($duplicate) {
+            return back()->withInput()->with('error', 'Data sudah ada sebelumnya');
+        }
 
         $lat = (float) $request->input('latitude');
         $lng = (float) $request->input('longitude');
@@ -122,12 +143,22 @@ class WasteBankController extends Controller
             'village_id' => ['required', 'integer', 'exists:villages,id'],
             'name' => ['required', 'string', 'max:150'],
             'address' => ['required', 'string', 'max:255'],
-            'phone' => ['nullable', 'string', 'max:30'],
+            'phone' => ['nullable', 'string', 'regex:/^[0-9]{1,13}$/'],
             'description' => ['nullable', 'string', 'max:1000'],
             'latitude' => ['required', 'numeric', 'between:-90,90'],
             'longitude' => ['required', 'numeric', 'between:-180,180'],
             'is_active' => ['boolean'],
         ]);
+
+        $duplicate = WasteBank::where('village_id', $request->input('village_id'))
+            ->where('id', '!=', $id)
+            ->whereRaw('LOWER(TRIM(name)) = LOWER(TRIM(?))', [$request->input('name')])
+            ->whereRaw('LOWER(TRIM(address)) = LOWER(TRIM(?))', [$request->input('address')])
+            ->exists();
+
+        if ($duplicate) {
+            return back()->withInput()->with('error', 'Data sudah ada sebelumnya');
+        }
 
         $lat = (float) $request->input('latitude');
         $lng = (float) $request->input('longitude');
@@ -149,6 +180,21 @@ class WasteBankController extends Controller
         ]);
 
         return redirect()->route('waste-banks.index')->with('success', 'Data Bank Sampah berhasil diperbarui.');
+    }
+
+    public function destroy(Request $request, int $id): RedirectResponse
+    {
+        $user = $request->user()->loadMissing('role');
+        $isSuperAdmin = $user->role?->name === 'super_admin_kecamatan';
+        $wasteBank = WasteBank::findOrFail($id);
+
+        if (!$isSuperAdmin && (int) $wasteBank->village_id !== (int) $user->village_id) {
+            abort(403, 'Anda tidak berwenang menghapus Bank Sampah di luar kelurahan Anda.');
+        }
+
+        $wasteBank->delete();
+
+        return redirect()->route('waste-banks.index')->with('success', 'Bank Sampah berhasil dihapus.');
     }
 
     public function toggleStatus(int $id): RedirectResponse
