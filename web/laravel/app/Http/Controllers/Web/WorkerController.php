@@ -108,6 +108,7 @@ class WorkerController extends Controller
                 'string',
                 'email',
                 'max:255',
+                'ends_with:@papsampah.id',
                 'unique:users,email'
             ],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
@@ -124,8 +125,9 @@ class WorkerController extends Controller
                 ? ['required', 'exists:villages,id']
                 : ['nullable'],
         ], [
-            'name.regex' => 'Nama petugas tidak boleh diawali dengan angka.',
+            'name.regex' => 'Nama petugas tidak boleh diawali dengan angka maupun simbol.',
             'email.unique' => 'Email ini sudah terdaftar dalam sistem.',
+            'email.ends_with' => 'Email harus diakhiri dengan @papsampah.id.',
             'phone.required' => 'Nomor telepon wajib diisi.',
             'phone.numeric' => 'Nomor telepon harus berupa angka.',
             'phone.digits_between' => 'Nomor telepon harus berisi antara 10 hingga 15 digit.',
@@ -187,8 +189,10 @@ class WorkerController extends Controller
             ],
             'email' => [
                 'required',
+                'string',
                 'email',
                 'max:255',
+                'ends_with:@papsampah.id',
                 Rule::unique('users', 'email')->ignore($worker->id)
             ],
             'phone' => [
@@ -211,8 +215,9 @@ class WorkerController extends Controller
         }
 
         $validated = $request->validate($rules, [
-            'name.regex' => 'Nama petugas tidak boleh diawali dengan angka.',
+            'name.regex' => 'Nama petugas tidak boleh diawali dengan angka ataupun simbol.',
             'email.unique' => 'Email ini sudah digunakan oleh pengguna lain.',
+            'email.ends_with' => 'Email harus diakhiri dengan @papsampah.id.',
             'phone.required' => 'Nomor telepon wajib diisi.',
             'phone.numeric' => 'Nomor telepon harus berupa angka.',
             'phone.digits_between' => 'Nomor telepon harus berisi antara 10 hingga 15 digit.',

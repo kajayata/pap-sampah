@@ -8,6 +8,7 @@ use App\Http\Controllers\Web\ReportController;
 use App\Http\Controllers\Web\WasteBankController;
 use App\Http\Controllers\Web\WorkerController;
 use App\Http\Controllers\Web\SampahJemberLandingController;
+use App\Http\Controllers\Web\UserController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [SampahJemberLandingController::class, 'index'])->name('public.home');
@@ -35,6 +36,13 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/petugas/{id}/edit', [WorkerController::class, 'edit'])->name('petugas.edit');
     Route::put('/petugas/{id}', [WorkerController::class, 'update'])->name('petugas.update');
     Route::patch('/petugas/{id}/toggle-status', [WorkerController::class, 'toggleStatus'])->name('petugas.toggle-status');
+
+    // Manajemen User (Masyarakat/Warga)
+    Route::get('/user', [UserController::class, 'index'])->name('user.index');
+    Route::patch('/user/{id}/toggle-status', [UserController::class, 'toggleStatus'])->name('user.toggle-status');
+    Route::get('/user/{id}/edit', [UserController::class, 'edit'])->name('user.edit');
+    Route::put('/user/{id}', [UserController::class, 'update'])->name('user.update');
+    Route::delete('/user/{id}', [UserController::class, 'destroy'])->name('user.destroy');
 
     // Manajemen & Validasi Laporan Sampah
     Route::get('/laporan', [ReportController::class, 'index'])->name('reports.index');
