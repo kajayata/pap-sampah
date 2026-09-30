@@ -42,6 +42,15 @@ class LandfillController extends Controller
             'is_active' => ['boolean'],
         ]);
 
+        $duplicate = Landfill::where('village_id', $request->input('village_id'))
+            ->whereRaw('LOWER(TRIM(name)) = LOWER(TRIM(?))', [$request->input('name')])
+            ->whereRaw('LOWER(TRIM(address)) = LOWER(TRIM(?))', [$request->input('address')])
+            ->exists();
+
+        if ($duplicate) {
+            return back()->withInput()->with('error', 'Data sudah ada sebelumnya');
+        }
+
         $lat = (float) $request->input('latitude');
         $lng = (float) $request->input('longitude');
 
@@ -81,6 +90,16 @@ class LandfillController extends Controller
             'is_active' => ['boolean'],
         ]);
 
+        $duplicate = Landfill::where('village_id', $request->input('village_id'))
+            ->where('id', '!=', $id)
+            ->whereRaw('LOWER(TRIM(name)) = LOWER(TRIM(?))', [$request->input('name')])
+            ->whereRaw('LOWER(TRIM(address)) = LOWER(TRIM(?))', [$request->input('address')])
+            ->exists();
+
+        if ($duplicate) {
+            return back()->withInput()->with('error', 'Data sudah ada sebelumnya');
+        }
+
         $lat = (float) $request->input('latitude');
         $lng = (float) $request->input('longitude');
 
@@ -100,6 +119,14 @@ class LandfillController extends Controller
         ]);
 
         return redirect()->route('landfills.index')->with('success', 'Data TPA berhasil diperbarui.');
+    }
+
+    public function destroy(int $id): RedirectResponse
+    {
+        $landfill = Landfill::findOrFail($id);
+        $landfill->delete();
+
+        return redirect()->route('landfills.index')->with('success', 'Fasilitas TPA / TPS-3R berhasil dihapus.');
     }
 
     public function toggleStatus(int $id): RedirectResponse
