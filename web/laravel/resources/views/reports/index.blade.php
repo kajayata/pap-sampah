@@ -54,22 +54,24 @@
 
     <!-- Filter & Search Bar -->
     <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
-        <form method="GET" action="{{ route('reports.index') }}" class="flex flex-col sm:flex-row gap-3 items-center">
-            <input type="hidden" name="status" value="{{ request('status', 'ALL') }}">
+    <form id="report-search-form" method="GET" action="{{ route('reports.index') }}" class="flex flex-col sm:flex-row gap-3 items-center">
+        <input type="hidden" name="status" value="{{ request('status', 'ALL') }}">
 
-            <!-- Search Field -->
-            <div class="relative flex-1 w-full">
-                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                </div>
-                <input type="text"
-                       name="search"
-                       value="{{ request('search') }}"
-                       placeholder="Cari kode laporan, pelapor, atau deskripsi (tekan Enter)..."
-                       class="w-full pl-9 pr-3.5 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 text-sm placeholder-slate-400">
+        <!-- Search Field -->
+        <div class="relative flex-1 w-full">
+            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
             </div>
+            <input type="text"
+                   id="search-input"
+                   name="search"
+                   value="{{ request('search') }}"
+                   placeholder="Cari kode laporan, pelapor, atau deskripsi..."
+                   autocomplete="off"
+                   class="w-full pl-9 pr-3.5 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 text-sm placeholder-slate-400">
+        </div>
 
             <!-- Category Filter -->
             <div class="w-full sm:w-auto">
@@ -225,4 +227,29 @@
         </div>
     @endif
 </div>
+@push('scripts') {{-- atau taruh langsung di dalam tag <script> jika tidak menggunakan stack --}}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const searchInput = document.getElementById('search-input');
+        const searchForm = document.getElementById('report-search-form');
+        let timeout = null;
+
+        if (searchInput && searchForm) {
+            searchInput.addEventListener('input', function () {
+                clearTimeout(timeout);
+
+                // Menunggu 500ms setelah user selesai mengetik baru lakukan submit
+                timeout = setTimeout(function () {
+                    searchForm.submit();
+                }, 500);
+            });
+
+            // Pindahkan kursor ke posisi paling akhir kata setelah re-load halaman
+            const length = searchInput.value.length;
+            searchInput.focus();
+            searchInput.setSelectionRange(length, length);
+        }
+    });
+</script>
+@endpush
 @endsection

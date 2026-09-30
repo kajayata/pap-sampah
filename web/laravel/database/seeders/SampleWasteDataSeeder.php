@@ -108,6 +108,14 @@ class SampleWasteDataSeeder extends Seeder
                     'lon' => 113.7220,
                     'lat' => -8.1740,
                 ],
+                [
+                    'code' => 'REP-202609-0004',
+                    'village_id' => $sumbersari->id,
+                    'desc' => 'Limbah organik berserakan di area persawahan dekat jalan Karimata',
+                    'status' => WasteReport::STATUS_VALIDATED,
+                    'lon' => 113.7220,
+                    'lat' => -8.1740,
+                ],
             ];
 
             foreach ($reports as $r) {
