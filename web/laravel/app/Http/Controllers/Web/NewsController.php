@@ -193,7 +193,7 @@ class NewsController extends Controller
             [
                 'title.required' => 'Judul artikel wajib diisi.',
                 'title.min' => 'Judul artikel minimal 5 karakter.',
-                'title.max' => 'Judul artikel maksimal 150 karakter.',
+                'title.max' => 'Judul artikel maksimal 50 karakter.',
                 'title.regex' => 'Judul artikel harus mengandung huruf atau angka.',
 
                 'slug.unique' => 'Slug artikel sudah digunakan.',
@@ -354,7 +354,7 @@ class NewsController extends Controller
             [
                 'title.required' => 'Judul artikel wajib diisi.',
                 'title.min' => 'Judul artikel minimal 5 karakter.',
-                'title.max' => 'Judul artikel maksimal 150 karakter.',
+                'title.max' => 'Judul artikel maksimal 50 karakter.',
                 'title.regex' => 'Judul artikel harus mengandung huruf atau angka.',
 
                 'slug.unique' => 'Slug artikel sudah digunakan.',

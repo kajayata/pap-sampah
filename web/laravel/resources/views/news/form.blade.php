@@ -130,7 +130,7 @@
                 <div class="flex items-center justify-between mt-1">
 
                     <p class="text-2xs text-slate-400">
-                        Judul harus 5–150 karakter.
+                        Judul harus 5–50 karakter.
                     </p>
 
                     <span id="title-counter"
