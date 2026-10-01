@@ -230,7 +230,7 @@ class Fase4FeatureTest extends TestCase
                 'village_id' => $wasteBank->village_id,
                 'name' => strtoupper($wasteBank->name),
                 'address' => strtoupper($wasteBank->address),
-                'phone' => '081234567890',
+                'phone' => '0812' . str_pad((string) random_int(0, 999999999), 9, '0', STR_PAD_LEFT),
                 'latitude' => '-8.1725',
                 'longitude' => '113.7160',
             ])
@@ -239,6 +239,63 @@ class Fase4FeatureTest extends TestCase
             ->assertSee('role="alert"', false);
 
         $this->assertSame($initialCount, WasteBank::count());
+    }
+
+    public function test_waste_bank_phone_is_required_and_must_be_unique(): void
+    {
+        $superAdmin = User::where('email', 'kec.sumbersari@papsampah.id')->firstOrFail();
+        $existingBank = WasteBank::whereNotNull('phone')->firstOrFail();
+        $validData = [
+            'village_id' => $existingBank->village_id,
+            'name' => 'Bank Sampah Phone Validation ' . uniqid(),
+            'address' => 'Alamat Pengujian Telepon',
+            'latitude' => '-8.1725',
+            'longitude' => '113.7160',
+        ];
+
+        $this->actingAs($superAdmin)
+            ->from('/bank-sampah/create')
+            ->post('/bank-sampah', $validData)
+            ->assertRedirect('/bank-sampah/create')
+            ->assertSessionHasErrors('phone');
+
+        $this->actingAs($superAdmin)
+            ->from('/bank-sampah/create')
+            ->post('/bank-sampah', $validData + ['phone' => $existingBank->phone])
+            ->assertRedirect('/bank-sampah/create')
+            ->assertSessionHasErrors('phone');
+    }
+
+    public function test_waste_bank_and_landfill_addresses_reject_unapproved_symbols(): void
+    {
+        $superAdmin = User::where('email', 'kec.sumbersari@papsampah.id')->firstOrFail();
+        $villageId = WasteBank::firstOrFail()->village_id;
+        $address = 'Jl. Mawar No. 5 @';
+
+        $this->actingAs($superAdmin)
+            ->from('/bank-sampah/create')
+            ->post('/bank-sampah', [
+                'village_id' => $villageId,
+                'name' => 'Address Validation ' . uniqid(),
+                'address' => $address,
+                'phone' => '08' . str_pad((string) random_int(0, 99999999999), 11, '0', STR_PAD_LEFT),
+                'latitude' => '-8.1725',
+                'longitude' => '113.7160',
+            ])
+            ->assertRedirect('/bank-sampah/create')
+            ->assertSessionHasErrors('address');
+
+        $this->actingAs($superAdmin)
+            ->from('/tpa/create')
+            ->post('/tpa', [
+                'village_id' => $villageId,
+                'name' => 'Landfill Address Validation ' . uniqid(),
+                'address' => $address,
+                'latitude' => '-8.1725',
+                'longitude' => '113.7160',
+            ])
+            ->assertRedirect('/tpa/create')
+            ->assertSessionHasErrors('address');
     }
 
     public function test_duplicate_landfill_is_rejected_with_alert(): void

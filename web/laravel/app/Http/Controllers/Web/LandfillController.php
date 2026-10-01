@@ -35,7 +35,7 @@ class LandfillController extends Controller
         $request->validate([
             'village_id' => ['required', 'integer', 'exists:villages,id'],
             'name' => ['required', 'string', 'max:150'],
-            'address' => ['required', 'string', 'max:255'],
+            'address' => ['required', 'string', 'max:255', 'regex:/^[\pL\pN\s().,\/]+$/u'],
             'description' => ['nullable', 'string', 'max:1000'],
             'latitude' => ['required', 'numeric', 'between:-90,90'],
             'longitude' => ['required', 'numeric', 'between:-180,180'],
@@ -83,7 +83,7 @@ class LandfillController extends Controller
         $request->validate([
             'village_id' => ['required', 'integer', 'exists:villages,id'],
             'name' => ['required', 'string', 'max:150'],
-            'address' => ['required', 'string', 'max:255'],
+            'address' => ['required', 'string', 'max:255', 'regex:/^[\pL\pN\s().,\/]+$/u'],
             'description' => ['nullable', 'string', 'max:1000'],
             'latitude' => ['required', 'numeric', 'between:-90,90'],
             'longitude' => ['required', 'numeric', 'between:-180,180'],

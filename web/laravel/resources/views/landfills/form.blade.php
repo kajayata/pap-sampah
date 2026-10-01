@@ -26,6 +26,12 @@
         </div>
     </div>
 
+    @if(session('error'))
+        <div role="alert" class="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-sm" aria-live="assertive">
+            {{ session('error') }}
+        </div>
+    @endif
+
     <form method="POST"
           action="{{ $landfill->exists ? route('landfills.update', $landfill->id) : route('landfills.store') }}"
           class="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-xs space-y-6">

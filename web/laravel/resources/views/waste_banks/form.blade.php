@@ -26,6 +26,12 @@
         </div>
     </div>
 
+    @if(session('error'))
+        <div role="alert" class="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-sm" aria-live="assertive">
+            {{ session('error') }}
+        </div>
+    @endif
+
     <form method="POST"
           action="{{ $wasteBank->exists ? route('waste-banks.update', $wasteBank->id) : route('waste-banks.store') }}"
           class="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-xs space-y-6">
@@ -69,12 +75,13 @@
             <!-- Telepon / Kontak -->
             <div>
                 <label for="phone" class="block font-semibold text-slate-700 mb-1">
-                    Nomor Kontak / WhatsApp
+                    Nomor Kontak / WhatsApp @if(!$wasteBank->exists)<span class="text-rose-500">*</span>@endif
                 </label>
                 <input type="text"
                        name="phone"
                        id="phone"
                        value="{{ old('phone', $wasteBank->phone) }}"
+                      @if(!$wasteBank->exists) required @endif
                       maxlength="13"
                       inputmode="numeric"
                       pattern="[0-9]{1,13}"

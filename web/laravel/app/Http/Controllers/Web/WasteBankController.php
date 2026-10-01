@@ -73,12 +73,16 @@ class WasteBankController extends Controller
         $request->validate([
             'village_id' => ['required', 'integer', 'exists:villages,id'],
             'name' => ['required', 'string', 'max:150'],
-            'address' => ['required', 'string', 'max:255'],
-            'phone' => ['nullable', 'string', 'regex:/^[0-9]{1,13}$/'],
+            'address' => ['required', 'string', 'max:255', 'regex:/^[\pL\pN\s().,\/]+$/u'],
+                'phone' => ['required', 'string', 'regex:/^[0-9]{1,13}$/', 'unique:waste_banks,phone'],
             'description' => ['nullable', 'string', 'max:1000'],
             'latitude' => ['required', 'numeric', 'between:-90,90'],
             'longitude' => ['required', 'numeric', 'between:-180,180'],
             'is_active' => ['boolean'],
+        ], [
+            'phone.required' => 'Nomor telepon wajib diisi.',
+            'phone.regex' => 'Nomor telepon harus terdiri dari 1 hingga 13 angka.',
+            'phone.unique' => 'Nomor telepon sudah digunakan oleh Bank Sampah lain.',
         ]);
 
         $duplicate = WasteBank::where('village_id', $request->input('village_id'))
@@ -142,7 +146,7 @@ class WasteBankController extends Controller
         $request->validate([
             'village_id' => ['required', 'integer', 'exists:villages,id'],
             'name' => ['required', 'string', 'max:150'],
-            'address' => ['required', 'string', 'max:255'],
+            'address' => ['required', 'string', 'max:255', 'regex:/^[\pL\pN\s().,\/]+$/u'],
             'phone' => ['nullable', 'string', 'regex:/^[0-9]{1,13}$/'],
             'description' => ['nullable', 'string', 'max:1000'],
             'latitude' => ['required', 'numeric', 'between:-90,90'],
@@ -207,3 +211,4 @@ class WasteBankController extends Controller
         return redirect()->back()->with('success', "Bank Sampah {$wasteBank->name} berhasil {$status}.");
     }
 }
+

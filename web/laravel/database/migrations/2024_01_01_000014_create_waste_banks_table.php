@@ -14,7 +14,7 @@ return new class extends Migration
             $table->unsignedInteger('village_id');
             $table->string('name', 150);
             $table->string('address', 255);
-            $table->string('phone', 30)->nullable();
+            $table->bigInteger('phone')->nullable();
             $table->text('description')->nullable();
             $table->boolean('is_active')->default(true);
 
