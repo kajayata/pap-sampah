@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\AppSetting;
 use App\Models\District;
 use App\Models\Landfill;
+use App\Models\News;
 use App\Models\Village;
 use App\Models\WasteBank;
 use App\Models\WasteReport;
@@ -33,22 +34,34 @@ class SampahJemberLandingController extends Controller
         $statusCounts = WasteReport::query()
             ->whereIn('village_id', $villageIds)
             ->selectRaw('count(*) as total')
-            ->selectRaw('count(*) filter (where status not in (?, ?)) as active', [
-                WasteReport::STATUS_RESOLVED,
-                WasteReport::STATUS_REJECTED,
-            ])
-            ->selectRaw('count(*) filter (where status = ?) as resolved', [WasteReport::STATUS_RESOLVED])
+            ->selectRaw(
+                'count(*) filter (where status not in (?, ?)) as active',
+                [
+                    WasteReport::STATUS_RESOLVED,
+                    WasteReport::STATUS_REJECTED,
+                ]
+            )
+            ->selectRaw(
+                'count(*) filter (where status = ?) as resolved',
+                [WasteReport::STATUS_RESOLVED]
+            )
             ->first();
 
         $villageStats = WasteReport::query()
             ->whereIn('village_id', $villageIds)
             ->select('village_id')
             ->selectRaw('count(*) as total')
-            ->selectRaw('count(*) filter (where status not in (?, ?)) as active', [
-                WasteReport::STATUS_RESOLVED,
-                WasteReport::STATUS_REJECTED,
-            ])
-            ->selectRaw('count(*) filter (where status = ?) as resolved', [WasteReport::STATUS_RESOLVED])
+            ->selectRaw(
+                'count(*) filter (where status not in (?, ?)) as active',
+                [
+                    WasteReport::STATUS_RESOLVED,
+                    WasteReport::STATUS_REJECTED,
+                ]
+            )
+            ->selectRaw(
+                'count(*) filter (where status = ?) as resolved',
+                [WasteReport::STATUS_RESOLVED]
+            )
             ->groupBy('village_id')
             ->get()
             ->keyBy('village_id');
@@ -58,18 +71,21 @@ class SampahJemberLandingController extends Controller
             ->orderBy('name')
             ->get(['id', 'name']);
 
-        $villageCards = $villages->map(function ($village) use ($villageStats) {
-            $villageStat = $villageStats->get($village->id);
-            $active = (int) ($villageStat->active ?? 0);
+        $villageCards = $villages
+            ->map(function ($village) use ($villageStats) {
+                $villageStat = $villageStats->get($village->id);
+                $active = (int) ($villageStat->active ?? 0);
 
-            return [
-                'name' => $village->name,
-                'status' => $active > 0 ? 'Aktif' : 'Selesai',
-                'total' => (int) ($villageStat->total ?? 0),
-                'selesai' => (int) ($villageStat->resolved ?? 0),
-                'aktif' => $active,
-            ];
-        })->values()->all();
+                return [
+                    'name' => $village->name,
+                    'status' => $active > 0 ? 'Aktif' : 'Selesai',
+                    'total' => (int) ($villageStat->total ?? 0),
+                    'selesai' => (int) ($villageStat->resolved ?? 0),
+                    'aktif' => $active,
+                ];
+            })
+            ->values()
+            ->all();
 
         $total = (int) ($statusCounts->total ?? 0);
         $resolved = (int) ($statusCounts->resolved ?? 0);
@@ -77,54 +93,127 @@ class SampahJemberLandingController extends Controller
         $stats = [
             'wilayah' => $district->name,
             'total_laporan' => $total,
-            'persentase_selesai' => $total > 0 ? round(($resolved / $total) * 100) . '%' : '0%',
+            'persentase_selesai' => $total > 0
+                ? round(($resolved / $total) * 100) . '%'
+                : '0%',
             'kelurahan_dipantau' => $villages->count(),
             'laporan_aktif' => (int) ($statusCounts->active ?? 0),
         ];
 
         $heatmapData = $villageIds
-            ->flatMap(fn ($villageId) => $this->mapService->getHeatmapData((int) $villageId))
+            ->flatMap(
+                fn ($villageId) => $this->mapService->getHeatmapData(
+                    (int) $villageId
+                )
+            )
             ->values()
             ->all();
 
         $wastePoints = $villageIds
-            ->flatMap(fn ($villageId) => $this->mapService->getWastePoints((int) $villageId, 'all'))
+            ->flatMap(
+                fn ($villageId) => $this->mapService->getWastePoints(
+                    (int) $villageId,
+                    'all'
+                )
+            )
             ->values()
             ->all();
+
         $boundariesGeoJson = $this->mapService->getVillagesGeoJson();
-        $villages = Village::whereIn('id', $villageIds)->orderBy('name')->get();
+
+        $villages = Village::whereIn('id', $villageIds)
+            ->orderBy('name')
+            ->get();
+
         $wasteBanks = WasteBank::withCoordinates()
             ->with('village:id,name')
             ->whereIn('village_id', $villageIds)
             ->where('is_active', true)
             ->get();
+
         $landfills = Landfill::withCoordinates()
             ->with('village:id,name')
             ->where('is_active', true)
             ->get();
-        $markerDisplayDays = (int) AppSetting::getValue('marker_display_days', '7');
+
+        $markerDisplayDays = (int) AppSetting::getValue(
+            'marker_display_days',
+            '7'
+        );
+
+        /*
+         * Berita yang ditampilkan di halaman utama:
+         *
+         * - hanya PUBLISHED
+         * - published_at tidak null
+         * - published_at tidak boleh melebihi waktu sekarang
+         * - urut dari yang terbaru
+         * - maksimal 6 berita
+         */
+        $news = News::published()
+            ->with([
+                'author.role',
+                'author.village',
+            ])
+            ->latest('published_at')
+            ->limit(6)
+            ->get();
 
         $guideSteps = [
-            ['number' => '01', 'icon' => '📱', 'title' => 'Unduh Aplikasi', 'description' => 'Unduh aplikasi SampahJember secara gratis melalui Google Play Store atau App Store.'],
-            ['number' => '02', 'icon' => '👤', 'title' => 'Daftar & Masuk', 'description' => 'Buat akun masyarakat melalui aplikasi mobile, lalu masuk untuk mulai melapor.'],
-            ['number' => '03', 'icon' => '📍', 'title' => 'Ambil Lokasi', 'description' => 'Aktifkan GPS dan pastikan lokasi laporan berada di wilayah Kecamatan Sumbersari.'],
-            ['number' => '04', 'icon' => '📸', 'title' => 'Kirim Laporan', 'description' => 'Tambahkan foto, kategori, dan deskripsi kondisi sampah sebagai bukti laporan.'],
-            ['number' => '05', 'icon' => '🧹', 'title' => 'Pantau Penanganan', 'description' => 'Admin Desa memvalidasi laporan dan menugaskan petugas sesuai kelurahan operasionalnya.'],
-            ['number' => '06', 'icon' => '✅', 'title' => 'Lihat Hasil', 'description' => 'Pantau status laporan dan foto hasil pembersihan setelah diverifikasi Admin Desa.'],
+            [
+                'number' => '01',
+                'icon' => '📱',
+                'title' => 'Unduh Aplikasi',
+                'description' => 'Unduh aplikasi SampahJember secara gratis melalui Google Play Store atau App Store.',
+            ],
+            [
+                'number' => '02',
+                'icon' => '👤',
+                'title' => 'Daftar & Masuk',
+                'description' => 'Buat akun masyarakat melalui aplikasi mobile, lalu masuk untuk mulai melapor.',
+            ],
+            [
+                'number' => '03',
+                'icon' => '📍',
+                'title' => 'Ambil Lokasi',
+                'description' => 'Aktifkan GPS dan pastikan lokasi laporan berada di wilayah Kecamatan Sumbersari.',
+            ],
+            [
+                'number' => '04',
+                'icon' => '📸',
+                'title' => 'Kirim Laporan',
+                'description' => 'Tambahkan foto, kategori, dan deskripsi kondisi sampah sebagai bukti laporan.',
+            ],
+            [
+                'number' => '05',
+                'icon' => '🧹',
+                'title' => 'Pantau Penanganan',
+                'description' => 'Admin Desa memvalidasi laporan dan menugaskan petugas sesuai kelurahan operasionalnya.',
+            ],
+            [
+                'number' => '06',
+                'icon' => '✅',
+                'title' => 'Lihat Hasil',
+                'description' => 'Pantau status laporan dan foto hasil pembersihan setelah diverifikasi Admin Desa.',
+            ],
         ];
 
-        return view('public_landing.index', compact(
-            'district',
-            'stats',
-            'villageCards',
-            'heatmapData',
-            'wastePoints',
-            'boundariesGeoJson',
-            'villages',
-            'wasteBanks',
-            'landfills',
-            'markerDisplayDays',
-            'guideSteps'
-        ));
+        return view(
+            'public_landing.index',
+            compact(
+                'district',
+                'stats',
+                'villageCards',
+                'heatmapData',
+                'wastePoints',
+                'boundariesGeoJson',
+                'villages',
+                'wasteBanks',
+                'landfills',
+                'markerDisplayDays',
+                'guideSteps',
+                'news'
+            )
+        );
     }
 }
