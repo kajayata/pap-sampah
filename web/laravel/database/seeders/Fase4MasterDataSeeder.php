@@ -9,6 +9,7 @@ use App\Models\Village;
 use App\Models\WasteBank;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class Fase4MasterDataSeeder extends Seeder
@@ -146,36 +147,63 @@ class Fase4MasterDataSeeder extends Seeder
 
         // 3. Seed Environmental News / Educational Articles
         if ($superAdmin) {
+            // Buang artikel berita lama milik seeder ini supaya tidak muncul lagi
+            // saat migrate:fresh --seed dijalankan ulang.
+            News::whereIn('slug', [
+                'pilah-sampah-dari-rumah-langkah-nyata-warga-sumbersari',
+                'mengenal-bank-sampah-menabung-sampah-plastik-menjadi-berkah',
+                'gerakan-tanggap-sampah-liar-bersama-aplikasi-pap-sampah',
+            ])->delete();
+
             $articles = [
                 [
-                    'title' => 'Pilah Sampah dari Rumah: Langkah Nyata Warga Sumbersari Cegah Banjir',
-                    'slug' => 'pilah-sampah-dari-rumah-langkah-nyata-warga-sumbersari',
-                    'content' => "Memilah sampah dari rumah tangga menjadi kunci keberhasilan pengelolaan kebersihan di Kecamatan Sumbersari.\n\nDengan memisahkan antara sampah organik (sisa makanan, daun) dan sampah anorganik (plastik, botol, kardus), kita dapat mengurangi beban tempat pembuangan akhir hingga 60%.\n\nMari aktifkan pemilahan di rumah kita masing-masing demi Jember yang lebih asri dan lestari!",
+                    'title' => 'Tumpukan Sampah Liar di Sumbersari Berhasil Dibersihkan Petugas',
+                    'slug' => 'tumpukan-sampah-liar-di-sumbersari-berhasil-dibersihkan-petugas',
+                    'source_image' => '../../sampahTest.jpeg',
+                    'thumbnail_storage_key' => 'news-thumbnails/dummy/sampah-test-1.jpg',
+                    'content' => "Petugas kebersihan Kelurahan Sumbersari membersihkan titik tumpukan sampah liar yang terdata lewat aplikasi Pap Sampah.\n\nLokasi tersebut sudah ditandai sebagai laporan tuntas, sementara volume sampah langsung dibawa ke TPS-3R Terpadu Sumbersari.\n\nWarga sekitar lokasi diminta menjaga kebersihan jalan dan segera melapor bila menemukan tumpukan baru.",
                     'status' => News::STATUS_PUBLISHED,
                     'published_at' => now()->subDays(2),
                 ],
                 [
-                    'title' => 'Mengenal Bank Sampah: Menabung Sampah Plastik Menjadi Berkah Finansial',
-                    'slug' => 'mengenal-bank-sampah-menabung-sampah-plastik-menjadi-berkah',
-                    'content' => "Kecamatan Sumbersari kini telah memiliki unit bank sampah aktif di setiap kelurahan.\n\nMelalui program bank sampah, warga dapat membawa sampah bernilai ekonomis seperti botol mineral, kardus bekas, dan kaleng untuk ditimbang dan dicatat menjadi saldo buku tabungan.\n\nSegera hubungi pengurus RT/RW atau kunjungi bank sampah terdekat di kelurahan Anda!",
-                    'status' => News::STATUS_PUBLISHED,
-                    'published_at' => now()->subDay(),
+                    'title' => 'Belajar Melaporkan Sampah Liar Lewat Aplikasi Pap Sampah',
+                    'slug' => 'belajar-melaporkan-sampah-liar-lewat-aplikasi-pap-sampah',
+                    'source_image' => '../../sampahTest2.jpeg',
+                    'thumbnail_storage_key' => 'news-thumbnails/dummy/sampah-test-2.jpg',
+                    'content' => "Aplikasi Pap Sampah memudahkan warga melaporkan sampah liar cukup dengan foto dan titik lokasi GPS.\n\nLaporan masuk ke admin kelurahan, divalidasi, lalu ditugaskan ke petugas hingga selesai. Semua proses bisa dipantau warga lewat aplikasi.\n\nMari ikut bergerak dari sekarang juga demi Sumbersari yang lebih bersih.",
+                    'status' => News::STATUS_DRAFT,
+                    'published_at' => null,
                 ],
                 [
-                    'title' => 'Gerakan Tanggap Sampah Liar Bersama Aplikasi Pap Sampah',
-                    'slug' => 'gerakan-tanggap-sampah-liar-bersama-aplikasi-pap-sampah',
-                    'content' => "Aplikasi Pap Sampah resmi diluncurkan untuk mempermudah masyarakat melaporkan tumpukan sampah liar secara cepat dan akurat menggunakan kamera ponsel dan GPS otomatis.\n\nSetiap laporan yang masuk akan langsung divalidasi oleh pihak kelurahan dan ditindaklanjuti oleh petugas kebersihan desa hingga bersih tuntas.\n\nLaporkan sampah liar di lingkungan Anda sekarang juga!",
-                    'status' => News::STATUS_PUBLISHED,
-                    'published_at' => now(),
+                    'title' => 'Aksi Bersih Sampah Terpilah: Gotong Royong Warga Sumbersari',
+                    'slug' => 'aksi-bersih-sampah-terpilah-gotong-royong-warga-sumbersari',
+                    'source_image' => '../../BeritaSampah.jpeg',
+                    'thumbnail_storage_key' => 'news-thumbnails/dummy/berita-sampah-3.jpg',
+                    'content' => "Kegiatan bersih sampah dilakukan bersama warga dan sekolah, dengan sampah langsung dipilah menjadi organik dan anorganik.\n\nSampah anorganik bernilai diserahkan ke bank sampah kelurahan, sementara sampah organik diolah menjadi kompos.\n\nKegiatan ini membuktikan bahwa kekompakan warga adalah kunci menjaga lingkungan Sumbersari.",
+                    'status' => News::STATUS_ARCHIVED,
+                    'published_at' => now()->subDays(30),
                 ],
             ];
 
             foreach ($articles as $art) {
-                News::firstOrCreate(
+                // Foto dummy diambil dari root repo (ter-commit di sana), disalin mentah
+                // ke public disk supaya tetap tampil setelah migrate:fresh --seed.
+                $sourcePath = base_path($art['source_image']);
+                if (is_file($sourcePath)) {
+                    Storage::disk(config('filesystems.default', 'public'))->put(
+                        $art['thumbnail_storage_key'],
+                        file_get_contents($sourcePath)
+                    );
+                }
+
+                unset($art['source_image']);
+
+                News::updateOrCreate(
                     ['slug' => $art['slug']],
                     [
                         'title' => $art['title'],
                         'content' => $art['content'],
+                        'thumbnail_storage_key' => $art['thumbnail_storage_key'],
                         'author_id' => $superAdmin->id,
                         'status' => $art['status'],
                         'published_at' => $art['published_at'],

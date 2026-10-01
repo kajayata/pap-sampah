@@ -10,6 +10,7 @@ use App\Models\WasteReport;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 
 class SampleWasteDataSeeder extends Seeder
 {
@@ -118,8 +119,17 @@ class SampleWasteDataSeeder extends Seeder
                 ],
             ];
 
-            foreach ($reports as $r) {
-                DB::table('waste_reports')->insert([
+            // Foto dummy diambil dari root repo (ter-commit di sana), disalin mentah
+            // ke public disk lalu didaftarkan sebagai metadata di waste_report_photos.
+            // Binary-nya tetap di storage, DB hanya menyimpan metadata (invariant #9).
+            $dummyImages = [
+                '../../sampahTest.jpeg',
+                '../../sampahTest2.jpeg',
+                '../../BeritaSampah.jpeg',
+            ];
+
+            foreach ($reports as $index => $r) {
+                $reportId = DB::table('waste_reports')->insertGetId([
                     'report_code' => $r['code'],
                     'reported_by' => $reporter->id,
                     'village_id' => $r['village_id'],
@@ -129,6 +139,31 @@ class SampleWasteDataSeeder extends Seeder
                     'location' => DB::raw("ST_SetSRID(ST_MakePoint({$r['lon']}, {$r['lat']}), 4326)"),
                     'created_at' => now()->subHours(rand(1, 24)),
                     'updated_at' => now(),
+                ]);
+
+                $imagePath = base_path($dummyImages[$index % count($dummyImages)]);
+                if (!is_file($imagePath)) {
+                    continue;
+                }
+
+                $dimensions = getimagesize($imagePath);
+                $storageKey = 'reports/dummy/report-' . ($index + 1) . '.jpg';
+
+                Storage::disk(config('filesystems.default', 'public'))->put(
+                    $storageKey,
+                    file_get_contents($imagePath)
+                );
+
+                DB::table('waste_report_photos')->insert([
+                    'report_id' => $reportId,
+                    'storage_key' => $storageKey,
+                    'mime_type' => 'image/jpeg',
+                    'file_size' => filesize($imagePath),
+                    'width' => $dimensions[0],
+                    'height' => $dimensions[1],
+                    'captured_at' => now(),
+                    'uploaded_by' => $reporter->id,
+                    'created_at' => now(),
                 ]);
             }
         }
