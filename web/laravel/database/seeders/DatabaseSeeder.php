@@ -14,6 +14,7 @@ class DatabaseSeeder extends Seeder
             AdminSeeder::class,
             SampleWasteDataSeeder::class,
             Fase4MasterDataSeeder::class,
+            UserSeeder::class,
         ]);
     }
 }
