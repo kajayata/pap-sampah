@@ -2,17 +2,21 @@
 
 namespace Database\Seeders;
 
-use App\Models\Role;
-use App\Models\User;
 use Illuminate\Database\Seeder;
+use App\Models\User;
+use App\Models\Role;
 use Illuminate\Support\Facades\Hash;
 
 class UserSeeder extends Seeder
 {
     public function run(): void
     {
-        // Pastikan role 'user' ada
-        $userRole = Role::firstOrCreate(['name' => 'user']);
+        // Cari role 'masyarakat'
+        $userRole = Role::whereIn('name', ['masyarakat', 'user'])->first();
+
+        if (!$userRole) {
+            $userRole = Role::create(['name' => 'masyarakat']);
+        }
 
         $dummyUsers = [
             [
@@ -32,14 +36,19 @@ class UserSeeder extends Seeder
             ],
         ];
 
-        foreach ($dummyUsers as $data) {
-            User::firstOrCreate(
-                ['email' => $data['email']],
+        foreach ($dummyUsers as $userData) {
+            // Cegah seeder jika email mengandung domain internal petugas/admin (@papsampah.id)
+            if (str_ends_with($userData['email'], '@papsampah.id')) {
+                continue; // Lewati data ini jika emailnya milik petugas/admin
+            }
+
+            User::updateOrCreate(
+                ['email' => $userData['email']],
                 [
-                    'role_id' => $userRole->id,
-                    'name' => $data['name'],
-                    'phone' => $data['phone'],
+                    'name' => $userData['name'],
+                    'phone' => $userData['phone'],
                     'password' => Hash::make('password123'),
+                    'role_id' => $userRole->id, // Hanya diset sebagai role masyarakat
                     'is_active' => true,
                 ]
             );

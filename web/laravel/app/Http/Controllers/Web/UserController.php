@@ -7,25 +7,30 @@ use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
     /**
-     * Tampilkan daftar user (masyarakat/warga).
+     * Tampilkan daftar user (masyarakat/warga saja).
      */
     public function index(Request $request)
     {
         $this->authorizeSuperAdmin();
 
-        // Cari role user biasa / warga
-        $userRole = Role::where('name', 'user')->first();
+        // Cari role untuk masyarakat (pastikan nama role sesuai dengan database)
+        $userRole = Role::whereIn('name', ['masyarakat', 'user'])->first();
 
         $query = User::query();
 
-        // Jika ada role 'user', filter hanya menampilkan user biasa
+        // Filter hanya menampilkan user dengan role masyarakat
         if ($userRole) {
             $query->where('role_id', $userRole->id);
+        } else {
+            $query->whereHas('role', function ($q) {
+                $q->whereIn('name', ['masyarakat', 'user']);
+            });
         }
 
         // Fitur Pencarian (Search Filter)
@@ -43,16 +48,21 @@ class UserController extends Controller
         return view('user.index', compact('users'));
     }
 
+    /**
+     * Ubah status aktif/nonaktif akun user.
+     */
     public function toggleStatus($id)
-        {
-            $user = User::findOrFail($id);
-            $user->is_active = !$user->is_active;
-            $user->save();
+    {
+        $this->authorizeSuperAdmin();
 
-            $statusMessage = $user->is_active ? 'Akun berhasil diaktifkan kembali.' : 'Akun berhasil dikunci/dinonaktifkan.';
+        $user = User::findOrFail($id);
+        $user->is_active = !$user->is_active;
+        $user->save();
 
-            return redirect()->back()->with('success', $statusMessage);
-        }
+        $statusMessage = $user->is_active ? 'Akun berhasil diaktifkan kembali.' : 'Akun berhasil dikunci/dinonaktifkan.';
+
+        return redirect()->back()->with('success', $statusMessage);
+    }
 
     /**
      * Form edit data user.
@@ -67,7 +77,7 @@ class UserController extends Controller
     }
 
     /**
-     * Update data user dengan validasi ketat.
+     * Update data user dengan validasi ketat & mengabaikan unik untuk ID milik sendiri.
      */
     public function update(Request $request, int $id)
     {
@@ -76,46 +86,43 @@ class UserController extends Controller
         $user = User::findOrFail($id);
 
         $rules = [
-            // 1. Nama wajib string & tidak boleh diawali angka
+            // 1. Nama wajib huruf & spasi (tidak boleh ada angka sama sekali)
             'name' => [
                 'required',
                 'string',
                 'max:255',
-                'regex:/^[a-zA-Z\s][a-zA-Z0-9\s._-]*$/'
+                'regex:/^[a-zA-Z\s]+$/'
             ],
-            // 2. Email wajib berakhiran @papsampah.id dan unik (mengabaikan ID user ini)
+            // 2. Email wajib unik (mengabaikan ID user yang sedang diedit)
             'email' => [
                 'required',
                 'string',
-                'email:rfc,dns', // Memastikan domain email valid dan aktif
+                'email:rfc,dns',
                 'max:255',
-                Rule::unique('users', 'email')->ignore($user->id)
+                Rule::unique('users', 'email')->ignore($user->id, 'id')
             ],
-            // 3. Phone wajib diawali 08, berupa angka, dan unik
+            // 3. Nomor HP diawali 08, panjang 10-15 digit, unik (mengabaikan ID user yang sedang diedit)
             'phone' => [
                 'required',
                 'string',
-                'numeric',
-                'digits_between:10,15',
-                'regex:/^08[0-9]+$/',
-                Rule::unique('users', 'phone')->ignore($user->id)
+                'regex:/^08[0-9]{8,13}$/',
+                Rule::unique('users', 'phone')->ignore($user->id, 'id')
             ],
             'is_active' => ['required', 'boolean'],
         ];
 
-        // Jika password diisi, lakukan validasi ganti password
         if ($request->filled('password')) {
             $rules['password'] = ['string', 'min:8', 'confirmed'];
         }
 
         $validated = $request->validate($rules, [
-            'name.regex' => 'Nama pengguna tidak boleh diawali dengan angka.',
-            'email.ends_with' => 'Email harus menggunakan domain @papsampah.id.',
+            'name.required' => 'Nama pengguna wajib diisi.',
+            'name.regex' => 'Nama pengguna hanya boleh berisi huruf dan spasi (tidak boleh mengandung angka).',
+            'email.required' => 'Email wajib diisi.',
+            'email.email' => 'Format email tidak valid.',
             'email.unique' => 'Email ini sudah digunakan oleh pengguna lain.',
             'phone.required' => 'Nomor telepon wajib diisi.',
-            'phone.numeric' => 'Nomor telepon harus berupa angka.',
-            'phone.digits_between' => 'Nomor telepon harus berisi antara 10 hingga 15 digit.',
-            'phone.regex' => 'Nomor telepon harus diawali dengan 08.',
+            'phone.regex' => 'Nomor telepon harus diawali dengan 08 dan memiliki panjang 10 hingga 15 digit angka.',
             'phone.unique' => 'Nomor telepon ini sudah digunakan oleh pengguna lain.',
             'password.min' => 'Kata sandi minimal 8 karakter.',
             'password.confirmed' => 'Konfirmasi kata sandi tidak cocok.',
@@ -129,7 +136,7 @@ class UserController extends Controller
         ];
 
         if ($request->filled('password')) {
-            $updateData['password'] = $validated['password'];
+            $updateData['password'] = bcrypt($validated['password']);
         }
 
         $user->update($updateData);
@@ -139,7 +146,7 @@ class UserController extends Controller
     }
 
     /**
-     * Hapus data user dari sistem.
+     * Hapus data user dari sistem (Cek riwayat terlebih dahulu).
      */
     public function destroy(int $id)
     {
@@ -148,14 +155,35 @@ class UserController extends Controller
         $user = User::findOrFail($id);
         $userName = $user->name;
 
+        // 1. Cek apakah user pernah/masih memiliki laporan sampah
+        $hasReports = DB::table('waste_reports')
+            ->where('reported_by', $user->id)
+            ->exists();
+
+        if ($hasReports) {
+            return redirect()->route('user.index')
+                ->with('error', "Gagal menghapus '{$userName}'. Pengguna tidak dapat dihapus karena memiliki riwayat/laporan sampah dalam sistem.");
+        }
+
+        // 2. Cek apakah user terikat sebagai petugas/pekerja
+        $hasTask = DB::table('cleanup_task_workers')
+            ->where('worker_id', $user->id)
+            ->exists();
+
+        if ($hasTask) {
+            return redirect()->route('user.index')
+                ->with('error', "Gagal menghapus '{$userName}'. Pengguna masih terikat pada tugas kebersihan.");
+        }
+
+        // 3. Hapus jika tidak terikat riwayat apapun
         $user->delete();
 
         return redirect()->route('user.index')
-            ->with('success', "Pengguna '{$userName}' berhasil dihapus dari sistem.");
+            ->with('success', "Pengguna '{$userName}' berhasil dihapus.");
     }
 
     /**
-     * Pastikan hanya Super Admin Kecamatan yang dapat mengakses controller ini.
+     * Otorisasi Super Admin Kecamatan.
      */
     private function authorizeSuperAdmin(): void
     {

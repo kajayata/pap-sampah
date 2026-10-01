@@ -100,7 +100,7 @@ class WorkerController extends Controller
                 'required',
                 'string',
                 'max:255',
-                'regex:/^[a-zA-Z\s][a-zA-Z0-9\s._-]*$/'
+                'regex:/^[a-zA-Z\s]+$/'
             ],
             // 2. Email wajib unik di tabel users
             'email' => [
