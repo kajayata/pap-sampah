@@ -8,6 +8,7 @@ use App\Services\ImageStorageService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class NewsController extends Controller
@@ -49,12 +50,38 @@ class NewsController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
-            'title' => ['required', 'string', 'max:255'],
+            'title' => [
+                'required',
+                'string',
+                'max:255',
+                function ($attribute, $value, $fail) {
+                    $words = preg_split('/\s+/', trim((string) $value), -1, PREG_SPLIT_NO_EMPTY);
+                    if (count($words) > 20) {
+                        $fail('Judul berita tidak boleh lebih dari 20 kata.');
+                    }
+                },
+            ],
             'slug' => ['nullable', 'string', 'max:255', 'unique:news,slug'],
             'content' => ['required', 'string'],
-            'thumbnail' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:10240'],
+            'thumbnail' => ['nullable', 'image', 'mimes:jpeg,jpg,png', 'max:10240'],
             'status' => ['required', 'in:DRAFT,PUBLISHED,ARCHIVED'],
+        ], [
+            'title.required' => 'Judul artikel berita wajib diisi.',
+            'thumbnail.image' => 'File harus berupa foto.',
+            'thumbnail.mimes' => 'Format file foto hanya boleh JPG atau PNG.',
+            'thumbnail.max' => 'Ukuran file foto maksimal 10MB.',
+            'content.required' => 'Isi artikel berita wajib diisi.',
+            'status.required' => 'Status publikasi wajib dipilih.',
         ]);
+
+        $duplicate = News::whereRaw('LOWER(TRIM(title)) = LOWER(TRIM(?))', [$request->input('title')])
+            ->exists();
+
+        if ($duplicate) {
+            return back()->withInput()->with('error', 'Judul berita sudah ada sebelumnya')->withErrors([
+                'title' => 'Judul berita sudah ada sebelumnya, judul tidak boleh sama.',
+            ]);
+        }
 
         $slug = $request->filled('slug')
             ? Str::slug($request->input('slug'))
@@ -70,7 +97,7 @@ class NewsController extends Controller
 
         $thumbnailKey = null;
         if ($request->hasFile('thumbnail')) {
-            $uploadResult = $this->imageStorageService->compressAndStore(
+            $uploadResult = $this->imageStorageService->processAndStore(
                 $request->file('thumbnail'),
                 'news-thumbnails'
             );
@@ -107,12 +134,39 @@ class NewsController extends Controller
         $this->authorizeNewsAction($article, $request);
 
         $request->validate([
-            'title' => ['required', 'string', 'max:255'],
+            'title' => [
+                'required',
+                'string',
+                'max:255',
+                function ($attribute, $value, $fail) {
+                    $words = preg_split('/\s+/', trim((string) $value), -1, PREG_SPLIT_NO_EMPTY);
+                    if (count($words) > 20) {
+                        $fail('Judul berita tidak boleh lebih dari 20 kata.');
+                    }
+                },
+            ],
             'slug' => ['nullable', 'string', 'max:255', "unique:news,slug,{$id}"],
             'content' => ['required', 'string'],
-            'thumbnail' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:10240'],
+            'thumbnail' => ['nullable', 'image', 'mimes:jpeg,jpg,png', 'max:10240'],
             'status' => ['required', 'in:DRAFT,PUBLISHED,ARCHIVED'],
+        ], [
+            'title.required' => 'Judul artikel berita wajib diisi.',
+            'thumbnail.image' => 'File harus berupa foto.',
+            'thumbnail.mimes' => 'Format file foto hanya boleh JPG atau PNG.',
+            'thumbnail.max' => 'Ukuran file foto maksimal 10MB.',
+            'content.required' => 'Isi artikel berita wajib diisi.',
+            'status.required' => 'Status publikasi wajib dipilih.',
         ]);
+
+        $duplicate = News::where('id', '!=', $id)
+            ->whereRaw('LOWER(TRIM(title)) = LOWER(TRIM(?))', [$request->input('title')])
+            ->exists();
+
+        if ($duplicate) {
+            return back()->withInput()->with('error', 'Judul berita sudah ada sebelumnya')->withErrors([
+                'title' => 'Judul berita sudah ada sebelumnya, judul tidak boleh sama.',
+            ]);
+        }
 
         $slug = $request->filled('slug')
             ? Str::slug($request->input('slug'))
@@ -120,7 +174,7 @@ class NewsController extends Controller
 
         $thumbnailKey = $article->thumbnail_storage_key;
         if ($request->hasFile('thumbnail')) {
-            $uploadResult = $this->imageStorageService->compressAndStore(
+            $uploadResult = $this->imageStorageService->processAndStore(
                 $request->file('thumbnail'),
                 'news-thumbnails'
             );
@@ -129,7 +183,9 @@ class NewsController extends Controller
 
         $status = $request->input('status');
         $publishedAt = $article->published_at;
-        if ($status === News::STATUS_PUBLISHED && !$publishedAt) {
+        if ($status === News::STATUS_DRAFT) {
+            $publishedAt = null;
+        } elseif ($status === News::STATUS_PUBLISHED && !$publishedAt) {
             $publishedAt = now();
         }
 

@@ -13,6 +13,11 @@ class ImageStorageService
     public const JPEG_QUALITY = 70;
     public const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10MB
 
+    public function compressAndStore(UploadedFile $file, string $folder = 'reports'): array
+    {
+        return $this->processAndStore($file, $folder);
+    }
+
     /**
      * Process uploaded image: validate, auto-orient EXIF, resize if > 1280px, compress JPEG 70%, and store.
      *

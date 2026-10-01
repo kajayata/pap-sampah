@@ -7,7 +7,9 @@ use App\Models\News;
 use App\Models\User;
 use App\Models\WasteBank;
 use App\Models\WasteReport;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class Fase4FeatureTest extends TestCase
@@ -501,5 +503,142 @@ class Fase4FeatureTest extends TestCase
             ->get('/bank-sampah?search=jelantah')
             ->assertOk()
             ->assertSee($wasteBank->name);
+    }
+
+    public function test_duplicate_news_title_is_rejected_with_error(): void
+    {
+        $superAdmin = User::where('email', 'kec.sumbersari@papsampah.id')->firstOrFail();
+        $existingNews = News::firstOrFail();
+
+        $this->actingAs($superAdmin)
+            ->from('/berita/create')
+            ->post('/berita', [
+                'title' => strtoupper($existingNews->title),
+                'content' => 'Konten uji duplikasi judul berita.',
+                'status' => 'PUBLISHED',
+            ])
+            ->assertRedirect('/berita/create')
+            ->assertSessionHasErrors('title');
+
+        $this->actingAs($superAdmin)
+            ->from('/berita/create')
+            ->followingRedirects()
+            ->post('/berita', [
+                'title' => $existingNews->title,
+                'content' => 'Konten uji duplikasi judul berita.',
+                'status' => 'PUBLISHED',
+            ])
+            ->assertOk()
+            ->assertSee('role="alert"', false)
+            ->assertSee('Judul berita sudah ada sebelumnya');
+    }
+
+    public function test_news_title_cannot_exceed_20_words(): void
+    {
+        $superAdmin = User::where('email', 'kec.sumbersari@papsampah.id')->firstOrFail();
+
+        // 21 words title
+        $longTitle = 'Satu Dua Tiga Empat Lima Enam Tujuh Delapan Sembilan Sepuluh Sebelas DuaBelas TigaBelas EmpatBelas LimaBelas EnamBelas TujuhBelas DelapanBelas SembilanBelas DuaPuluh DuaPuluhSatu';
+
+        $this->actingAs($superAdmin)
+            ->from('/berita/create')
+            ->post('/berita', [
+                'title' => $longTitle,
+                'content' => 'Konten berita judul panjang.',
+                'status' => 'PUBLISHED',
+            ])
+            ->assertRedirect('/berita/create')
+            ->assertSessionHasErrors('title');
+
+        // Exactly 20 words title
+        $valid20WordsTitle = 'Kata1 Kata2 Kata3 Kata4 Kata5 Kata6 Kata7 Kata8 Kata9 Kata10 Kata11 Kata12 Kata13 Kata14 Kata15 Kata16 Kata17 Kata18 Kata19 ' . uniqid();
+
+        $this->actingAs($superAdmin)
+            ->from('/berita/create')
+            ->post('/berita', [
+                'title' => $valid20WordsTitle,
+                'content' => 'Konten berita judul valid 20 kata.',
+                'status' => 'PUBLISHED',
+            ])
+            ->assertRedirect(route('news.index'))
+            ->assertSessionHasNoErrors();
+    }
+
+    public function test_news_thumbnail_only_accepts_jpg_and_png(): void
+    {
+        Storage::fake('public');
+        $superAdmin = User::where('email', 'kec.sumbersari@papsampah.id')->firstOrFail();
+
+        // Invalid: PDF file
+        $pdfFile = UploadedFile::fake()->create('document.pdf', 100, 'application/pdf');
+        $this->actingAs($superAdmin)
+            ->from('/berita/create')
+            ->post('/berita', [
+                'title' => 'Uji File PDF ' . uniqid(),
+                'content' => 'Konten file pdf.',
+                'status' => 'PUBLISHED',
+                'thumbnail' => $pdfFile,
+            ])
+            ->assertRedirect('/berita/create')
+            ->assertSessionHasErrors('thumbnail');
+
+        // Invalid: WEBP file
+        $webpFile = UploadedFile::fake()->create('image.webp', 100, 'image/webp');
+        $this->actingAs($superAdmin)
+            ->from('/berita/create')
+            ->post('/berita', [
+                'title' => 'Uji File WEBP ' . uniqid(),
+                'content' => 'Konten file webp.',
+                'status' => 'PUBLISHED',
+                'thumbnail' => $webpFile,
+            ])
+            ->assertRedirect('/berita/create')
+            ->assertSessionHasErrors('thumbnail');
+
+        // Valid: JPG photo
+        $jpgFile = UploadedFile::fake()->image('photo.jpg', 600, 400);
+        $this->actingAs($superAdmin)
+            ->from('/berita/create')
+            ->post('/berita', [
+                'title' => 'Uji File JPG ' . uniqid(),
+                'content' => 'Konten file jpg.',
+                'status' => 'PUBLISHED',
+                'thumbnail' => $jpgFile,
+            ])
+            ->assertRedirect(route('news.index'))
+            ->assertSessionHasNoErrors();
+    }
+
+    public function test_news_draft_status_does_not_display_publish_date_in_table(): void
+    {
+        $superAdmin = User::where('email', 'kec.sumbersari@papsampah.id')->firstOrFail();
+
+        // Create draft article
+        $draftArticle = News::create([
+            'title' => 'Artikel Konsep Draft ' . uniqid(),
+            'slug' => 'artikel-konsep-draft-' . uniqid(),
+            'content' => 'Ini adalah artikel yang berstatus draft.',
+            'author_id' => $superAdmin->id,
+            'status' => News::STATUS_DRAFT,
+            'published_at' => null,
+        ]);
+
+        $response = $this->actingAs($superAdmin)->get('/berita?status=DRAFT');
+        $response->assertOk();
+        $response->assertSee($draftArticle->title);
+
+        // Update an existing published article to DRAFT
+        $publishedArticle = News::where('status', News::STATUS_PUBLISHED)->firstOrFail();
+        $this->actingAs($superAdmin)
+            ->put("/berita/{$publishedArticle->id}", [
+                'title' => $publishedArticle->title,
+                'content' => $publishedArticle->content,
+                'status' => News::STATUS_DRAFT,
+            ])
+            ->assertRedirect(route('news.index'));
+
+        $publishedArticle->refresh();
+        $this->assertNull($publishedArticle->published_at);
+        $this->assertSame(News::STATUS_DRAFT, $publishedArticle->status);
     }
 }

@@ -118,7 +118,7 @@
                                 </span>
                             </td>
                             <td class="px-5 py-4 text-slate-500 text-2xs">
-                                {{ $article->published_at ? $article->published_at->translatedFormat('d M Y H:i') : '-' }}
+                                {{ ($article->status !== 'DRAFT' && $article->published_at) ? $article->published_at->translatedFormat('d M Y H:i') : '-' }}
                             </td>
                             <td class="px-5 py-4 text-right">
                                 @php
