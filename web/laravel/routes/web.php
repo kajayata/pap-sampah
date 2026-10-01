@@ -7,6 +7,7 @@ use App\Http\Controllers\Web\NewsController;
 use App\Http\Controllers\Web\ReportController;
 use App\Http\Controllers\Web\WasteBankController;
 use App\Http\Controllers\Web\WorkerController;
+use App\Http\Controllers\Web\VillageAdminController;
 use App\Http\Controllers\Web\SampahJemberLandingController;
 use App\Http\Controllers\Web\UserController;
 use Illuminate\Support\Facades\Route;
@@ -36,6 +37,14 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/petugas/{id}/edit', [WorkerController::class, 'edit'])->name('petugas.edit');
     Route::put('/petugas/{id}', [WorkerController::class, 'update'])->name('petugas.update');
     Route::patch('/petugas/{id}/toggle-status', [WorkerController::class, 'toggleStatus'])->name('petugas.toggle-status');
+
+    // Kelola akun admin kelurahan
+    Route::get('/akun-kelurahan', [VillageAdminController::class, 'index'])->name('village-admins.index');
+    Route::get('/akun-kelurahan/create', [VillageAdminController::class, 'create'])->name('village-admins.create');
+    Route::post('/akun-kelurahan', [VillageAdminController::class, 'store'])->name('village-admins.store');
+    Route::get('/akun-kelurahan/{user}/edit', [VillageAdminController::class, 'edit'])->name('village-admins.edit');
+    Route::put('/akun-kelurahan/{user}', [VillageAdminController::class, 'update'])->name('village-admins.update');
+    Route::patch('/akun-kelurahan/{user}/toggle-status', [VillageAdminController::class, 'toggleStatus'])->name('village-admins.toggle-status');
 
     // Manajemen User (Masyarakat/Warga)
     Route::get('/user', [UserController::class, 'index'])->name('user.index');

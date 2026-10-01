@@ -19,29 +19,48 @@ class AuthController extends Controller
 
     public function login(Request $request)
     {
-        $credentials = $request->validate([
-            'email' => ['required', 'email'],
-            'password' => ['required'],
-        ]);
+    $credentials = $request->validate([
+        'email' => ['required', 'email'],
+        'password' => ['required'],
+    ]);
 
-        if (!Auth::attempt($credentials, $request->boolean('remember'))) {
-            return back()->withErrors([
-                'email' => 'Email atau password salah.',
-            ])->onlyInput('email');
-        }
+    if (!Auth::attempt($credentials, $request->boolean('remember'))) {
+        return back()->withErrors([
+            'email' => 'Email atau password salah.',
+        ])->onlyInput('email');
+    }
 
-        $user = Auth::user();
+    $user = Auth::user()->load('role', 'village');
 
-        if (!$user->is_active) {
+    if (!$user->is_active) {
+        Auth::logout();
+
+        return back()->withErrors([
+            'email' => 'Akun tidak aktif.',
+        ])->onlyInput('email');
+    }
+
+    if ($user->hasRole('admin_desa')) {
+        if (!$user->village) {
             Auth::logout();
+
             return back()->withErrors([
-                'email' => 'Akun tidak aktif.',
+                'email' => 'Akun admin kelurahan belum memiliki kelurahan.',
             ])->onlyInput('email');
         }
 
-        $request->session()->regenerate();
+        if (!$user->village->is_active) {
+            Auth::logout();
 
-        return $this->redirectByRole($user->load('role'));
+            return back()->withErrors([
+                'email' => 'Kelurahan tempat akun Anda terdaftar sedang nonaktif.',
+            ])->onlyInput('email');
+        }
+    }
+
+    $request->session()->regenerate();
+
+    return $this->redirectByRole($user);
     }
 
     public function logout(Request $request)
