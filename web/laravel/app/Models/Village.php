@@ -7,8 +7,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Village extends Model
 {
-    public $timestamps = false;
-
     protected $fillable = ['district_id', 'name', 'code', 'is_active'];
 
     protected function casts(): array
