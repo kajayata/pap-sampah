@@ -5,164 +5,201 @@
 @section('content')
 <div class="max-w-7xl mx-auto px-6 py-8">
 
-    {{-- Header --}}
-    <div class="mb-8">
-        <h1 class="font-display text-3xl font-bold text-text-primary">Dashboard</h1>
-        <p class="text-text-muted mt-1">Selamat datang kembali, <span class="font-medium text-text-primary">{{ $user->name }}</span></p>
+    {{-- Ringkasan --}}
+    <div class="bg-surface rounded-2xl border border-border-default p-6 mb-6">
+        <div class="flex flex-col lg:flex-row lg:items-center gap-6">
+
+            {{-- Progress penyelesaian --}}
+            <div class="lg:flex-1">
+                <div class="flex items-baseline justify-between mb-2">
+                    <span class="text-sm font-medium text-text-muted">Tingkat Penyelesaian</span>
+                    <span class="font-display text-3xl font-black text-accent-primary">{{ $stats['completion_rate'] }}%</span>
+                </div>
+                <div class="w-full h-2.5 rounded-full bg-base overflow-hidden">
+                    <div class="h-full bg-accent-primary rounded-full transition-all" style="width: {{ $stats['completion_rate'] }}%"></div>
+                </div>
+                <p class="text-xs text-text-muted mt-2">
+                    <span class="font-semibold text-text-primary">{{ $stats['resolved'] }}</span> dari
+                    <span class="font-semibold text-text-primary">{{ $stats['total'] }}</span> laporan selesai ditangani
+                </p>
+            </div>
+
+            {{-- Metrik ringkas --}}
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 lg:flex-none">
+                <div class="rounded-xl border border-border-default bg-base px-4 py-3">
+                    <div class="text-xs text-text-muted mb-1">Perlu Validasi</div>
+                    <div class="font-display text-xl font-black text-accent-warning">{{ $stats['pending_validation'] }}</div>
+                </div>
+                <div class="rounded-xl border border-border-default bg-base px-4 py-3">
+                    <div class="text-xs text-text-muted mb-1">Sedang Ditangani</div>
+                    <div class="font-display text-xl font-black text-accent-primary">{{ $stats['in_progress'] }}</div>
+                </div>
+                <div class="rounded-xl border border-border-default bg-base px-4 py-3">
+                    <div class="text-xs text-text-muted mb-1">Menunggu Verifikasi</div>
+                    <div class="font-display text-xl font-black text-accent-warning">{{ $stats['pending_verification'] }}</div>
+                </div>
+                <div class="rounded-xl border border-border-default bg-base px-4 py-3">
+                    <div class="text-xs text-text-muted mb-1">Tren 7 Hari</div>
+                    <div class="font-display text-xl font-black {{ $trendDelta >= 0 ? 'text-accent-primary' : 'text-accent-danger' }}">
+                        {{ $trendDelta >= 0 ? '▲' : '▼' }} {{ abs($trendDelta) }}%
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    {{-- Stats Cards --}}
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    {{-- Tren & Distribusi --}}
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
 
-        {{-- Total Laporan --}}
-        <div class="bg-surface rounded-2xl border border-border-default p-5 hover:shadow-md transition-shadow duration-200">
-            <div class="flex items-center justify-between mb-3">
-                <span class="text-sm font-medium text-text-muted">Total Laporan</span>
-                <span class="w-9 h-9 bg-accent-primary/10 rounded-xl flex items-center justify-center">
-                    <svg class="w-5 h-5 text-accent-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
-                        <polyline points="14 2 14 8 20 8"/>
-                        <line x1="16" y1="13" x2="8" y2="13"/>
-                        <line x1="16" y1="17" x2="8" y2="17"/>
-                        <polyline points="10 9 9 9 8 9"/>
-                    </svg>
+        {{-- Tren 7 Hari --}}
+        <div class="bg-surface rounded-2xl border border-border-default p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="font-display text-xl font-bold text-text-primary">Tren Laporan (7 Hari)</h2>
+                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium {{ $trendDelta >= 0 ? 'bg-accent-primary/10 text-accent-primary' : 'bg-accent-danger/10 text-accent-danger' }}">
+                    {{ $trendDelta >= 0 ? '▲' : '▼' }} {{ abs($trendDelta) }}%
                 </span>
             </div>
-            <div class="font-display text-3xl font-black text-text-primary">{{ $stats['total'] }}</div>
-            <div class="text-xs text-text-muted mt-1">Semua status</div>
+            @php $maxTrend = max(1, max(array_column($trend, 'count'))); @endphp
+            <div class="flex items-end gap-2 h-40">
+                @foreach($trend as $t)
+                    <div class="flex-1 h-full flex flex-col items-center gap-1">
+                        <span class="text-xs font-semibold text-text-primary">{{ $t['count'] }}</span>
+                        <div class="flex-1 w-full flex items-end">
+                            <div class="w-full bg-accent-primary rounded-t-lg" style="height: {{ $t['count'] > 0 ? max(5, round($t['count'] / $maxTrend * 100)) : 2 }}%"></div>
+                        </div>
+                        <span class="text-xs text-text-muted">{{ $t['label'] }}</span>
+                    </div>
+                @endforeach
+            </div>
         </div>
 
-        {{-- Aktif --}}
-        <div class="bg-surface rounded-2xl border border-border-default p-5 hover:shadow-md transition-shadow duration-200">
-            <div class="flex items-center justify-between mb-3">
-                <span class="text-sm font-medium text-text-muted">Aktif</span>
-                <span class="w-9 h-9 bg-accent-warning/10 rounded-xl flex items-center justify-center">
-                    <svg class="w-5 h-5 text-accent-warning" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="10"/>
-                        <polyline points="12 6 12 12 16 14"/>
-                    </svg>
-                </span>
+        {{-- Distribusi Status --}}
+        <div class="bg-surface rounded-2xl border border-border-default p-6">
+            <h2 class="font-display text-xl font-bold text-text-primary mb-4">Distribusi Status</h2>
+            @php $maxStatus = max(1, max(array_column($statusBreakdown, 'count'))); @endphp
+            <div class="space-y-3">
+                @foreach($statusBreakdown as $s)
+                    <div>
+                        <div class="flex items-center justify-between text-sm mb-1">
+                            <span class="text-text-muted">{{ $s['label'] }}</span>
+                            <span class="font-semibold text-text-primary">{{ $s['count'] }}</span>
+                        </div>
+                        <div class="w-full h-2 rounded-full bg-base overflow-hidden">
+                            <div class="h-full rounded-full bg-{{ $s['color'] }}" style="width: {{ round($s['count'] / $maxStatus * 100) }}%"></div>
+                        </div>
+                    </div>
+                @endforeach
             </div>
-            <div class="font-display text-3xl font-black text-accent-warning">{{ $stats['active'] }}</div>
-            <div class="text-xs text-text-muted mt-1">Perlu penanganan</div>
+        </div>
+    </div>
+
+    {{-- Kategori & Petugas Teraktif --}}
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+
+        {{-- Kategori Terbanyak --}}
+        <div class="bg-surface rounded-2xl border border-border-default p-6">
+            <h2 class="font-display text-xl font-bold text-text-primary mb-4">Kategori Terbanyak</h2>
+            @if($topCategories->isEmpty())
+                <p class="text-sm text-text-muted py-6 text-center">Belum ada data laporan.</p>
+            @else
+                @php $maxCat = max(1, $topCategories->max('total')); @endphp
+                <div class="space-y-3">
+                    @foreach($topCategories as $cat)
+                        <div>
+                            <div class="flex items-center justify-between text-sm mb-1">
+                                <span class="text-text-muted truncate">{{ $cat->name }}</span>
+                                <span class="font-semibold text-text-primary">{{ $cat->total }}</span>
+                            </div>
+                            <div class="w-full h-2 rounded-full bg-base overflow-hidden">
+                                <div class="h-full rounded-full bg-accent-secondary" style="width: {{ round($cat->total / $maxCat * 100) }}%"></div>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            @endif
         </div>
 
-        {{-- Selesai --}}
-        <div class="bg-surface rounded-2xl border border-border-default p-5 hover:shadow-md transition-shadow duration-200">
-            <div class="flex items-center justify-between mb-3">
-                <span class="text-sm font-medium text-text-muted">Selesai</span>
-                <span class="w-9 h-9 bg-accent-primary/10 rounded-xl flex items-center justify-center">
-                    <svg class="w-5 h-5 text-accent-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
-                        <polyline points="22 4 12 14.01 9 11.01"/>
-                    </svg>
-                </span>
+        {{-- Petugas Teraktif (bulan ini) --}}
+        <div class="bg-surface rounded-2xl border border-border-default p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="font-display text-xl font-bold text-text-primary">Petugas Teraktif</h2>
+                <span class="text-xs text-text-muted">Bulan ini</span>
             </div>
-            <div class="font-display text-3xl font-black text-accent-primary">{{ $stats['resolved'] }}</div>
-            <div class="text-xs text-text-muted mt-1">Telah ditangani</div>
-        </div>
-
-        {{-- Petugas --}}
-        <div class="bg-surface rounded-2xl border border-border-default p-5 hover:shadow-md transition-shadow duration-200">
-            <div class="flex items-center justify-between mb-3">
-                <span class="text-sm font-medium text-text-muted">Petugas</span>
-                <span class="w-9 h-9 bg-accent-secondary/20 rounded-xl flex items-center justify-center">
-                    <svg class="w-5 h-5 text-text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
-                        <circle cx="9" cy="7" r="4"/>
-                        <path d="M23 21v-2a4 4 0 00-3-3.87"/>
-                        <path d="M16 3.13a4 4 0 010 7.75"/>
-                    </svg>
-                </span>
-            </div>
-            <div class="font-display text-3xl font-black text-text-primary">{{ $stats['workers'] }}</div>
-            <div class="text-xs text-text-muted mt-1">Tim kebersihan aktif</div>
+            @if($topWorkers->isEmpty())
+                <p class="text-sm text-text-muted py-6 text-center">Belum ada tugas selesai bulan ini.</p>
+            @else
+                <div class="space-y-2">
+                    @foreach($topWorkers as $i => $w)
+                        <div class="flex items-center gap-3 p-2.5 rounded-xl bg-base">
+                            <span class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 {{ $i === 0 ? 'bg-accent-secondary text-text-primary' : 'bg-accent-primary/10 text-accent-primary' }}">
+                                {{ $i + 1 }}
+                            </span>
+                            <span class="flex-1 text-sm font-medium text-text-primary truncate">{{ $w->name }}</span>
+                            <span class="text-xs font-semibold text-accent-primary shrink-0">{{ $w->total }} tugas</span>
+                        </div>
+                    @endforeach
+                </div>
+            @endif
         </div>
     </div>
 
     {{-- Role-specific content --}}
     @if($user->hasRole('super_admin_kecamatan'))
-        {{-- Super Admin: Monitoring --}}
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-            {{-- Map / Overview --}}
-            <div class="lg:col-span-2 bg-surface rounded-2xl border border-border-default p-6">
-                <div class="flex items-center justify-between mb-4">
-                    <h2 class="font-display text-xl font-bold text-text-primary">Peta Kecamatan</h2>
-                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-accent-primary/10 text-accent-primary">
-                        Live
-                    </span>
+        {{-- Laporan Aktif per Kelurahan --}}
+        <div class="bg-surface rounded-2xl border border-border-default p-6 mb-6">
+            <h2 class="font-display text-xl font-bold text-text-primary mb-4">Laporan Aktif per Kelurahan</h2>
+            @if($topVillages->isEmpty())
+                <p class="text-sm text-text-muted py-6 text-center">Belum ada laporan aktif.</p>
+            @else
+                @php $maxVillage = max(1, $topVillages->max('total')); @endphp
+                <div class="space-y-3">
+                    @foreach($topVillages as $v)
+                        <div>
+                            <div class="flex items-center justify-between text-sm mb-1">
+                                <span class="text-text-muted truncate">{{ $v->name }}</span>
+                                <span class="font-semibold text-text-primary">{{ $v->total }}</span>
+                            </div>
+                            <div class="w-full h-2 rounded-full bg-base overflow-hidden">
+                                <div class="h-full rounded-full bg-accent-warning" style="width: {{ round($v->total / $maxVillage * 100) }}%"></div>
+                            </div>
+                        </div>
+                    @endforeach
                 </div>
-                <div class="bg-base rounded-2xl h-64 flex items-center justify-center border border-border-default">
-                    <div class="text-center">
-                        <svg class="w-12 h-12 text-text-muted/30 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            @endif
+        </div>
+
+        {{-- Aksi Cepat --}}
+        <div class="bg-surface rounded-2xl border border-border-default p-5">
+            <h3 class="font-display text-lg font-bold text-text-primary mb-4">Aksi Cepat</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <a href="{{ route('map.index') }}" class="flex items-center gap-3 p-3 rounded-xl hover:bg-accent-primary/5 border border-transparent hover:border-accent-primary/15 transition-all duration-200 group">
+                    <span class="w-9 h-9 bg-accent-primary/10 rounded-xl flex items-center justify-center group-hover:bg-accent-primary/20 transition-colors">
+                        <svg class="w-5 h-5 text-accent-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/>
                             <circle cx="12" cy="10" r="3"/>
                         </svg>
-                        <p class="text-sm text-text-muted">Peta heatmap akan ditampilkan di sini</p>
-                    </div>
-                </div>
-            </div>
-
-            {{-- Sidebar info --}}
-            <div class="space-y-4">
-                {{-- Info Akun --}}
-                <div class="bg-surface rounded-2xl border border-border-default p-5">
-                    <h3 class="font-display text-lg font-bold text-text-primary mb-4">Informasi Akun</h3>
-                    <div class="space-y-3">
-                        <div class="flex items-center gap-3">
-                            <span class="w-9 h-9 bg-accent-secondary/20 rounded-full flex items-center justify-center text-sm font-bold text-text-primary">
-                                {{ strtoupper(substr($user->name, 0, 1)) }}
-                            </span>
-                            <div>
-                                <div class="text-sm font-medium text-text-primary">{{ $user->name }}</div>
-                                <div class="text-xs text-text-muted">{{ $user->email }}</div>
-                            </div>
-                        </div>
-                        <div class="pt-3 border-t border-border-default">
-                            <div class="flex items-center justify-between text-sm">
-                                <span class="text-text-muted">Role</span>
-                                <span class="font-medium text-accent-primary">Super Admin Kecamatan</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Aksi Cepat --}}
-                <div class="bg-surface rounded-2xl border border-border-default p-5">
-                    <h3 class="font-display text-lg font-bold text-text-primary mb-4">Aksi Cepat</h3>
-                    <div class="space-y-2">
-                        <a href="#" class="flex items-center gap-3 p-3 rounded-xl hover:bg-accent-primary/5 border border-transparent hover:border-accent-primary/15 transition-all duration-200 group">
-                            <span class="w-9 h-9 bg-accent-primary/10 rounded-xl flex items-center justify-center group-hover:bg-accent-primary/20 transition-colors">
-                                <svg class="w-5 h-5 text-accent-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/>
-                                    <circle cx="12" cy="10" r="3"/>
-                                </svg>
-                            </span>
-                            <span class="text-sm font-medium text-text-primary">Lihat Peta</span>
-                        </a>
-                        <a href="#" class="flex items-center gap-3 p-3 rounded-xl hover:bg-accent-primary/5 border border-transparent hover:border-accent-primary/15 transition-all duration-200 group">
-                            <span class="w-9 h-9 bg-accent-warning/10 rounded-xl flex items-center justify-center group-hover:bg-accent-warning/20 transition-colors">
-                                <svg class="w-5 h-5 text-accent-warning" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
-                                    <line x1="12" y1="9" x2="12" y2="13"/>
-                                    <line x1="12" y1="17" x2="12.01" y2="17"/>
-                                </svg>
-                            </span>
-                            <span class="text-sm font-medium text-text-primary">Laporan Aktif</span>
-                        </a>
-                        <a href="#" class="flex items-center gap-3 p-3 rounded-xl hover:bg-accent-primary/5 border border-transparent hover:border-accent-primary/15 transition-all duration-200 group">
-                            <span class="w-9 h-9 bg-accent-primary/10 rounded-xl flex items-center justify-center group-hover:bg-accent-primary/20 transition-colors">
-                                <svg class="w-5 h-5 text-accent-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <line x1="18" y1="20" x2="18" y2="10"/>
-                                    <line x1="12" y1="20" x2="12" y2="4"/>
-                                    <line x1="6" y1="20" x2="6" y2="14"/>
-                                </svg>
-                            </span>
-                            <span class="text-sm font-medium text-text-primary">Statistik</span>
-                        </a>
-                    </div>
-                </div>
+                    </span>
+                    <span class="text-sm font-medium text-text-primary">Lihat Peta</span>
+                </a>
+                <a href="{{ route('reports.index', ['status' => 'IN_PROGRESS']) }}" class="flex items-center gap-3 p-3 rounded-xl hover:bg-accent-primary/5 border border-transparent hover:border-accent-primary/15 transition-all duration-200 group">
+                    <span class="w-9 h-9 bg-accent-warning/10 rounded-xl flex items-center justify-center group-hover:bg-accent-warning/20 transition-colors">
+                        <svg class="w-5 h-5 text-accent-warning" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                            <line x1="12" y1="9" x2="12" y2="13"/>
+                            <line x1="12" y1="17" x2="12.01" y2="17"/>
+                        </svg>
+                    </span>
+                    <span class="text-sm font-medium text-text-primary">Laporan Aktif</span>
+                </a>
+                <a href="{{ route('reports.index', ['status' => 'PENDING_VALIDATION']) }}" class="flex items-center gap-3 p-3 rounded-xl hover:bg-accent-warning/5 border border-transparent hover:border-accent-warning/15 transition-all duration-200 group">
+                    <span class="w-9 h-9 bg-accent-warning/10 rounded-xl flex items-center justify-center group-hover:bg-accent-warning/20 transition-colors">
+                        <svg class="w-5 h-5 text-accent-warning" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9 11l3 3L22 4"/>
+                            <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+                        </svg>
+                    </span>
+                    <span class="text-sm font-medium text-text-primary">Validasi Laporan</span>
+                </a>
             </div>
         </div>
     @endif
@@ -291,27 +328,6 @@
             </div>
         </div>
     @endif
-
-    {{-- Recent Activity (shared) --}}
-    <div class="mt-8 bg-surface rounded-2xl border border-border-default p-6">
-        <h2 class="font-display text-xl font-bold text-text-primary mb-4">Aktivitas Terbaru</h2>
-        <div class="space-y-3">
-            <div class="flex items-center gap-4 p-3 rounded-xl bg-base">
-                <span class="w-9 h-9 bg-accent-primary/10 rounded-full flex items-center justify-center shrink-0">
-                    <svg class="w-4 h-4 text-accent-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="10"/>
-                        <line x1="12" y1="8" x2="12" y2="16"/>
-                        <line x1="8" y1="12" x2="16" y2="12"/>
-                    </svg>
-                </span>
-                <div class="flex-1 min-w-0">
-                    <p class="text-sm text-text-primary">Selamat datang di dashboard Pap Sampah</p>
-                    <p class="text-xs text-text-muted mt-0.5">Sistem siap digunakan</p>
-                </div>
-                <span class="text-xs text-text-muted shrink-0">Baru saja</span>
-            </div>
-        </div>
-    </div>
 
 </div>
 @endsection
