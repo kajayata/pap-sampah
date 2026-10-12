@@ -102,12 +102,12 @@ class AuthController extends Controller
         $inProgress = (int) ($statusCounts->assigned ?? 0) + (int) ($statusCounts->in_progress ?? 0);
 
         $statusBreakdown = [
-            ['label' => 'Menunggu Validasi', 'count' => $pending, 'color' => 'accent-warning'],
-            ['label' => 'Tervalidasi', 'count' => (int) ($statusCounts->validated ?? 0), 'color' => 'accent-secondary'],
-            ['label' => 'Sedang Ditangani', 'count' => $inProgress, 'color' => 'accent-primary'],
-            ['label' => 'Menunggu Verifikasi', 'count' => $pendingVerification, 'color' => 'accent-warning'],
-            ['label' => 'Selesai', 'count' => $resolved, 'color' => 'accent-primary'],
-            ['label' => 'Ditolak', 'count' => $rejected, 'color' => 'accent-danger'],
+            ['label' => 'Menunggu Validasi', 'count' => $pending, 'color' => '#FF9D23'],
+            ['label' => 'Tervalidasi', 'count' => (int) ($statusCounts->validated ?? 0), 'color' => '#FFD65A'],
+            ['label' => 'Sedang Ditangani', 'count' => $inProgress, 'color' => '#5B7E3C'],
+            ['label' => 'Menunggu Verifikasi', 'count' => $pendingVerification, 'color' => '#8B5CF6'],
+            ['label' => 'Selesai', 'count' => $resolved, 'color' => '#2E7D32'],
+            ['label' => 'Ditolak', 'count' => $rejected, 'color' => '#EA5252'],
         ];
 
         $stats = [
@@ -162,12 +162,18 @@ class AuthController extends Controller
             ->limit(5)
             ->get();
 
-        // Kelurahan dengan laporan aktif terbanyak (khusus super admin).
+        // Kelurahan dengan laporan aktif terbanyak + rincian status (khusus super admin).
         $topVillages = $isSuperAdmin
             ? \App\Models\WasteReport::query()
                 ->join('villages', 'waste_reports.village_id', '=', 'villages.id')
                 ->whereNotIn('waste_reports.status', ['RESOLVED', 'REJECTED'])
-                ->selectRaw('villages.name as name, count(*) as total')
+                ->selectRaw("
+                    villages.name as name,
+                    count(*) as total,
+                    count(*) filter (where waste_reports.status = 'PENDING_VALIDATION') as pending,
+                    count(*) filter (where waste_reports.status in ('ASSIGNED', 'IN_PROGRESS')) as in_progress,
+                    count(*) filter (where waste_reports.status = 'PENDING_VERIFICATION') as pending_verification
+                ")
                 ->groupBy('villages.name')
                 ->orderByDesc('total')
                 ->limit(5)

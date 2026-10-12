@@ -24,27 +24,29 @@
                 </p>
             </div>
 
-            {{-- Metrik ringkas --}}
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 lg:flex-none">
-                <div class="rounded-xl border border-border-default bg-base px-4 py-3">
-                    <div class="text-xs text-text-muted mb-1">Perlu Validasi</div>
-                    <div class="font-display text-xl font-black text-accent-warning">{{ $stats['pending_validation'] }}</div>
-                </div>
-                <div class="rounded-xl border border-border-default bg-base px-4 py-3">
-                    <div class="text-xs text-text-muted mb-1">Sedang Ditangani</div>
-                    <div class="font-display text-xl font-black text-accent-primary">{{ $stats['in_progress'] }}</div>
-                </div>
-                <div class="rounded-xl border border-border-default bg-base px-4 py-3">
-                    <div class="text-xs text-text-muted mb-1">Menunggu Verifikasi</div>
-                    <div class="font-display text-xl font-black text-accent-warning">{{ $stats['pending_verification'] }}</div>
-                </div>
-                <div class="rounded-xl border border-border-default bg-base px-4 py-3">
-                    <div class="text-xs text-text-muted mb-1">Tren 7 Hari</div>
-                    <div class="font-display text-xl font-black {{ $trendDelta >= 0 ? 'text-accent-primary' : 'text-accent-danger' }}">
-                        {{ $trendDelta >= 0 ? '▲' : '▼' }} {{ abs($trendDelta) }}%
+            {{-- Metrik ringkas (khusus admin kelurahan) --}}
+            @unless($user->hasRole('super_admin_kecamatan'))
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 lg:flex-none">
+                    <div class="rounded-xl border border-border-default bg-base px-4 py-3">
+                        <div class="text-xs text-text-muted mb-1">Perlu Validasi</div>
+                        <div class="font-display text-xl font-black text-accent-warning">{{ $stats['pending_validation'] }}</div>
+                    </div>
+                    <div class="rounded-xl border border-border-default bg-base px-4 py-3">
+                        <div class="text-xs text-text-muted mb-1">Sedang Ditangani</div>
+                        <div class="font-display text-xl font-black text-accent-primary">{{ $stats['in_progress'] }}</div>
+                    </div>
+                    <div class="rounded-xl border border-border-default bg-base px-4 py-3">
+                        <div class="text-xs text-text-muted mb-1">Menunggu Verifikasi</div>
+                        <div class="font-display text-xl font-black text-accent-warning">{{ $stats['pending_verification'] }}</div>
+                    </div>
+                    <div class="rounded-xl border border-border-default bg-base px-4 py-3">
+                        <div class="text-xs text-text-muted mb-1">Tren 7 Hari</div>
+                        <div class="font-display text-xl font-black {{ $trendDelta >= 0 ? 'text-accent-primary' : 'text-accent-danger' }}">
+                            {{ $trendDelta >= 0 ? '▲' : '▼' }} {{ abs($trendDelta) }}%
+                        </div>
                     </div>
                 </div>
-            </div>
+            @endunless
         </div>
     </div>
 
@@ -76,20 +78,40 @@
         {{-- Distribusi Status --}}
         <div class="bg-surface rounded-2xl border border-border-default p-6">
             <h2 class="font-display text-xl font-bold text-text-primary mb-4">Distribusi Status</h2>
-            @php $maxStatus = max(1, max(array_column($statusBreakdown, 'count'))); @endphp
-            <div class="space-y-3">
-                @foreach($statusBreakdown as $s)
-                    <div>
-                        <div class="flex items-center justify-between text-sm mb-1">
-                            <span class="text-text-muted">{{ $s['label'] }}</span>
-                            <span class="font-semibold text-text-primary">{{ $s['count'] }}</span>
-                        </div>
-                        <div class="w-full h-2 rounded-full bg-base overflow-hidden">
-                            <div class="h-full rounded-full bg-{{ $s['color'] }}" style="width: {{ round($s['count'] / $maxStatus * 100) }}%"></div>
+            @php
+                $statusTotal = array_sum(array_column($statusBreakdown, 'count'));
+                $stops = [];
+                $acc = 0;
+                foreach ($statusBreakdown as $s) {
+                    $start = $statusTotal > 0 ? $acc / $statusTotal * 100 : 0;
+                    $acc += $s['count'];
+                    $end = $statusTotal > 0 ? $acc / $statusTotal * 100 : 0;
+                    $stops[] = "{$s['color']} {$start}% {$end}%";
+                }
+                $donutBg = $statusTotal > 0 ? 'conic-gradient(' . implode(', ', $stops) . ')' : '#FAFAF5';
+            @endphp
+            @if($statusTotal === 0)
+                <p class="text-sm text-text-muted py-6 text-center">Belum ada data laporan.</p>
+            @else
+                <div class="flex flex-col sm:flex-row items-center gap-6">
+                    <div class="relative w-40 h-40 shrink-0 rounded-full" style="background: {{ $donutBg }};">
+                        <div class="absolute inset-[24%] rounded-full bg-surface"></div>
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <span class="font-display text-2xl font-black text-text-primary">{{ $statusTotal }}</span>
                         </div>
                     </div>
-                @endforeach
-            </div>
+                    <div class="flex-1 w-full space-y-2">
+                        @foreach($statusBreakdown as $s)
+                            <div class="flex items-center gap-2 text-sm">
+                                <span class="w-3 h-3 rounded-full shrink-0" style="background: {{ $s['color'] }}"></span>
+                                <span class="flex-1 text-text-muted truncate">{{ $s['label'] }}</span>
+                                <span class="font-semibold text-text-primary">{{ $s['count'] }}</span>
+                                <span class="text-xs text-text-muted w-10 text-right">{{ round($s['count'] / $statusTotal * 100) }}%</span>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
         </div>
     </div>
 
@@ -147,7 +169,14 @@
     @if($user->hasRole('super_admin_kecamatan'))
         {{-- Laporan Aktif per Kelurahan --}}
         <div class="bg-surface rounded-2xl border border-border-default p-6 mb-6">
-            <h2 class="font-display text-xl font-bold text-text-primary mb-4">Laporan Aktif per Kelurahan</h2>
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+                <h2 class="font-display text-xl font-bold text-text-primary">Laporan Aktif per Kelurahan</h2>
+                <div class="flex flex-wrap items-center gap-3 text-xs text-text-muted">
+                    <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full" style="background:#FF9D23"></span> Menunggu Validasi</span>
+                    <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full" style="background:#5B7E3C"></span> Sedang Ditangani</span>
+                    <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full" style="background:#8B5CF6"></span> Menunggu Verifikasi</span>
+                </div>
+            </div>
             @if($topVillages->isEmpty())
                 <p class="text-sm text-text-muted py-6 text-center">Belum ada laporan aktif.</p>
             @else
@@ -159,8 +188,14 @@
                                 <span class="text-text-muted truncate">{{ $v->name }}</span>
                                 <span class="font-semibold text-text-primary">{{ $v->total }}</span>
                             </div>
-                            <div class="w-full h-2 rounded-full bg-base overflow-hidden">
-                                <div class="h-full rounded-full bg-accent-warning" style="width: {{ round($v->total / $maxVillage * 100) }}%"></div>
+                            <div class="w-full h-3 rounded-full bg-base overflow-hidden">
+                                @if($v->total > 0)
+                                    <div class="h-full flex" style="width: {{ round($v->total / $maxVillage * 100) }}%">
+                                        <div style="width: {{ $v->pending / $v->total * 100 }}%; background:#FF9D23" title="Menunggu Validasi: {{ $v->pending }}"></div>
+                                        <div style="width: {{ $v->in_progress / $v->total * 100 }}%; background:#5B7E3C" title="Sedang Ditangani: {{ $v->in_progress }}"></div>
+                                        <div style="width: {{ $v->pending_verification / $v->total * 100 }}%; background:#8B5CF6" title="Menunggu Verifikasi: {{ $v->pending_verification }}"></div>
+                                    </div>
+                                @endif
                             </div>
                         </div>
                     @endforeach
