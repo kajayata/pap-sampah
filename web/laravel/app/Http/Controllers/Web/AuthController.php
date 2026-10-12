@@ -75,67 +75,134 @@ class AuthController extends Controller
     public function dashboard()
     {
         $user = Auth::user()->load('role', 'village');
+        $isSuperAdmin = $user->hasRole('super_admin_kecamatan');
+        $villageId = $user->village_id;
 
-        if ($user->hasRole('super_admin_kecamatan')) {
-            $reportCounts = \Illuminate\Support\Facades\DB::table('waste_reports')
-                ->selectRaw("
-                    count(*) as total,
-                    count(*) filter (where status not in ('RESOLVED', 'REJECTED')) as active,
-                    count(*) filter (where status = 'RESOLVED') as resolved
-                ")
-                ->first();
+        // Base query ber-scope wilayah: super admin = semua, admin kelurahan = wilayahnya.
+        $scoped = fn () => \App\Models\WasteReport::query()
+            ->when(!$isSuperAdmin, fn ($q) => $q->where('village_id', $villageId));
 
-            $workersCount = \Illuminate\Support\Facades\DB::table('users')
+        // Ringkasan status (semua status dalam satu query).
+        $statusCounts = $scoped()->selectRaw("
+            count(*) as total,
+            count(*) filter (where status = 'PENDING_VALIDATION') as pending,
+            count(*) filter (where status = 'VALIDATED') as validated,
+            count(*) filter (where status = 'ASSIGNED') as assigned,
+            count(*) filter (where status = 'IN_PROGRESS') as in_progress,
+            count(*) filter (where status = 'PENDING_VERIFICATION') as pending_verification,
+            count(*) filter (where status = 'RESOLVED') as resolved,
+            count(*) filter (where status = 'REJECTED') as rejected
+        ")->first();
+
+        $total = (int) ($statusCounts->total ?? 0);
+        $resolved = (int) ($statusCounts->resolved ?? 0);
+        $rejected = (int) ($statusCounts->rejected ?? 0);
+        $pending = (int) ($statusCounts->pending ?? 0);
+        $pendingVerification = (int) ($statusCounts->pending_verification ?? 0);
+        $inProgress = (int) ($statusCounts->assigned ?? 0) + (int) ($statusCounts->in_progress ?? 0);
+
+        $statusBreakdown = [
+            ['label' => 'Menunggu Validasi', 'count' => $pending, 'color' => 'accent-warning'],
+            ['label' => 'Tervalidasi', 'count' => (int) ($statusCounts->validated ?? 0), 'color' => 'accent-secondary'],
+            ['label' => 'Sedang Ditangani', 'count' => $inProgress, 'color' => 'accent-primary'],
+            ['label' => 'Menunggu Verifikasi', 'count' => $pendingVerification, 'color' => 'accent-warning'],
+            ['label' => 'Selesai', 'count' => $resolved, 'color' => 'accent-primary'],
+            ['label' => 'Ditolak', 'count' => $rejected, 'color' => 'accent-danger'],
+        ];
+
+        $stats = [
+            'total' => $total,
+            'active' => $total - $resolved - $rejected,
+            'resolved' => $resolved,
+            'workers' => \Illuminate\Support\Facades\DB::table('users')
                 ->join('roles', 'users.role_id', '=', 'roles.id')
                 ->where('roles.name', 'petugas_desa')
                 ->where('users.is_active', true)
-                ->count();
+                ->when(!$isSuperAdmin, fn ($q) => $q->where('users.village_id', $villageId))
+                ->count(),
+            'pending_validation' => $pending,
+            'pending_verification' => $pendingVerification,
+            'in_progress' => $inProgress,
+            'completion_rate' => $total > 0 ? (int) round($resolved / $total * 100) : 0,
+        ];
 
-            $stats = [
-                'total' => (int) ($reportCounts->total ?? 0),
-                'active' => (int) ($reportCounts->active ?? 0),
-                'resolved' => (int) ($reportCounts->resolved ?? 0),
-                'workers' => $workersCount,
+        // Tren laporan 7 hari terakhir + perbandingan 7 hari sebelumnya.
+        $prevStart = now()->subDays(13)->startOfDay();
+        $prevEnd = now()->subDays(7)->endOfDay();
+
+        $trendRows = $scoped()
+            ->where('created_at', '>=', $prevStart)
+            ->selectRaw("to_char(created_at, 'YYYY-MM-DD') as d, count(*) as c")
+            ->groupBy('d')
+            ->pluck('c', 'd');
+
+        $dayLabels = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+        $trend = [];
+        for ($i = 6; $i >= 0; $i--) {
+            $date = now()->subDays($i)->startOfDay();
+            $trend[] = [
+                'label' => $dayLabels[$date->dayOfWeek],
+                'date' => $date->format('d/m'),
+                'count' => (int) ($trendRows[$date->toDateString()] ?? 0),
             ];
-
-            $recentReports = \App\Models\WasteReport::with(['category', 'village', 'reporter'])
-                ->latest('created_at')
-                ->limit(5)
-                ->get();
-        } else {
-            $villageId = $user->village_id;
-
-            $reportCounts = \Illuminate\Support\Facades\DB::table('waste_reports')
-                ->where('village_id', $villageId)
-                ->selectRaw("
-                    count(*) as total,
-                    count(*) filter (where status not in ('RESOLVED', 'REJECTED')) as active,
-                    count(*) filter (where status = 'RESOLVED') as resolved
-                ")
-                ->first();
-
-            $workersCount = \Illuminate\Support\Facades\DB::table('users')
-                ->join('roles', 'users.role_id', '=', 'roles.id')
-                ->where('roles.name', 'petugas_desa')
-                ->where('users.village_id', $villageId)
-                ->where('users.is_active', true)
-                ->count();
-
-            $stats = [
-                'total' => (int) ($reportCounts->total ?? 0),
-                'active' => (int) ($reportCounts->active ?? 0),
-                'resolved' => (int) ($reportCounts->resolved ?? 0),
-                'workers' => $workersCount,
-            ];
-
-            $recentReports = \App\Models\WasteReport::with(['category', 'reporter'])
-                ->where('village_id', $villageId)
-                ->latest('created_at')
-                ->limit(5)
-                ->get();
         }
 
-        return view('dashboard.index', compact('user', 'stats', 'recentReports'));
+        $recent7 = array_sum(array_column($trend, 'count'));
+        $prev7 = (int) $scoped()->whereBetween('created_at', [$prevStart, $prevEnd])->count();
+        $trendDelta = $prev7 > 0
+            ? (int) round(($recent7 - $prev7) / $prev7 * 100)
+            : ($recent7 > 0 ? 100 : 0);
+
+        // Kategori terbanyak.
+        $topCategories = $scoped()
+            ->join('waste_categories', 'waste_reports.category_id', '=', 'waste_categories.id')
+            ->selectRaw('waste_categories.name as name, count(*) as total')
+            ->groupBy('waste_categories.name')
+            ->orderByDesc('total')
+            ->limit(5)
+            ->get();
+
+        // Kelurahan dengan laporan aktif terbanyak (khusus super admin).
+        $topVillages = $isSuperAdmin
+            ? \App\Models\WasteReport::query()
+                ->join('villages', 'waste_reports.village_id', '=', 'villages.id')
+                ->whereNotIn('waste_reports.status', ['RESOLVED', 'REJECTED'])
+                ->selectRaw('villages.name as name, count(*) as total')
+                ->groupBy('villages.name')
+                ->orderByDesc('total')
+                ->limit(5)
+                ->get()
+            : collect();
+
+        // Petugas teraktif — di-reset tiap bulan (tugas selesai sejak awal bulan).
+        $topWorkers = \Illuminate\Support\Facades\DB::table('cleanup_task_workers as ctw')
+            ->join('users as u', 'ctw.worker_id', '=', 'u.id')
+            ->where('ctw.status', 'COMPLETED')
+            ->where('ctw.completed_at', '>=', now()->startOfMonth())
+            ->when(!$isSuperAdmin, fn ($q) => $q->where('u.village_id', $villageId))
+            ->selectRaw('u.name as name, count(*) as total')
+            ->groupBy('u.id', 'u.name')
+            ->orderByDesc('total')
+            ->limit(5)
+            ->get();
+
+        $recentReports = \App\Models\WasteReport::with(['category', 'village', 'reporter'])
+            ->when(!$isSuperAdmin, fn ($q) => $q->where('village_id', $villageId))
+            ->latest('created_at')
+            ->limit(5)
+            ->get();
+
+        return view('dashboard.index', compact(
+            'user',
+            'stats',
+            'recentReports',
+            'statusBreakdown',
+            'trend',
+            'trendDelta',
+            'topCategories',
+            'topVillages',
+            'topWorkers'
+        ));
     }
 
     private function redirectByRole($user)
