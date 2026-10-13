@@ -7,26 +7,213 @@ use App\Models\Role;
 use App\Models\User;
 use App\Models\Village;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class VillageAdminController extends Controller
 {
+    private const MAX_ACCOUNTS_PER_VILLAGE = 3;
+
+    private const EMAIL_DOMAIN = '@papsampah.id';
+
     private function authorizeSuperAdmin(): void
     {
         abort_unless(
-            auth()->user()->hasRole('super_admin_kecamatan'),
+            auth()->user()?->hasRole('super_admin_kecamatan'),
             403
         );
     }
 
-    private function expectedEmailForVillage(Village $village): string
+    /**
+     * Membuat bagian awal email berdasarkan nama kelurahan.
+     * Contoh: kel.antirogo
+     */
+    private function emailPrefixForVillage(Village $village): string
     {
         $villageName = Str::lower(
             Str::slug($village->name, '')
         );
 
-        return 'kel.' . $villageName . '@papsampah.id';
+        return 'kel.' . $villageName;
+    }
+
+    /**
+     * Membuat email dengan nomor urutan akun.
+     * Contoh: kel.antirogo1@papsampah.id
+     */
+    private function expectedEmailForVillage(
+        Village $village,
+        int $sequence
+    ): string {
+        return $this->emailPrefixForVillage($village)
+            . $sequence
+            . self::EMAIL_DOMAIN;
+    }
+
+    /**
+     * Mengambil nomor urutan dari email akun yang sudah ada.
+     *
+     * Email lama tanpa angka akan dianggap belum memiliki
+     * nomor urutan dan ditangani saat akun diedit.
+     */
+    private function sequenceFromEmail(
+        string $email,
+        Village $village
+    ): ?int {
+        $prefix = preg_quote(
+            $this->emailPrefixForVillage($village),
+            '/'
+        );
+
+        $pattern = '/^' . $prefix
+            . '([0-9]+)'
+            . preg_quote(self::EMAIL_DOMAIN, '/')
+            . '$/i';
+
+        if (preg_match($pattern, $email, $matches) === 1) {
+            $sequence = (int) $matches[1];
+
+            return $sequence > 0 ? $sequence : null;
+        }
+
+        return null;
+    }
+
+    /**
+     * Menghitung nomor berikutnya berdasarkan jumlah akun
+     * dan nomor terbesar yang pernah digunakan.
+     *
+     * Nomor yang pernah digunakan tidak dipakai ulang
+     * hanya karena sebuah akun dihapus.
+     */
+    private function nextSequenceForVillage(
+        Village $village,
+        Role $adminRole
+    ): int {
+        $admins = User::query()
+            ->where('role_id', $adminRole->id)
+            ->where('village_id', $village->id)
+            ->get(['id', 'email']);
+
+        $highestSequence = 0;
+
+        foreach ($admins as $admin) {
+            $sequence = $this->sequenceFromEmail(
+                $admin->email,
+                $village
+            );
+
+            if ($sequence !== null) {
+                $highestSequence = max(
+                    $highestSequence,
+                    $sequence
+                );
+            }
+        }
+
+        return max(
+            $admins->count(),
+            $highestSequence
+        ) + 1;
+    }
+
+    /**
+     * Menghasilkan email yang belum digunakan.
+     */
+    private function generateAvailableEmail(
+        Village $village,
+        int $sequence,
+        ?int $ignoreUserId = null
+    ): string {
+        do {
+            $email = $this->expectedEmailForVillage(
+                $village,
+                $sequence
+            );
+
+            $exists = User::query()
+                ->where('email', $email)
+                ->when(
+                    $ignoreUserId !== null,
+                    fn ($query) => $query->where(
+                        'id',
+                        '!=',
+                        $ignoreUserId
+                    )
+                )
+                ->exists();
+
+            if ($exists) {
+                $sequence++;
+            }
+        } while ($exists);
+
+        return $email;
+    }
+
+    /**
+     * Mengambil urutan akun lama berdasarkan waktu pembuatan.
+     * Berguna untuk mengonversi email lama tanpa nomor.
+     */
+    private function sequenceForExistingAccount(
+        User $user,
+        Village $village,
+        Role $adminRole
+    ): int {
+        $existingSequence = $this->sequenceFromEmail(
+            $user->email,
+            $village
+        );
+
+        if ($existingSequence !== null) {
+            return $existingSequence;
+        }
+
+        $orderedIds = User::query()
+            ->where('role_id', $adminRole->id)
+            ->where('village_id', $village->id)
+            ->orderBy('created_at')
+            ->orderBy('id')
+            ->pluck('id')
+            ->values();
+
+        $position = $orderedIds->search(
+            fn ($id) => (int) $id === (int) $user->id
+        );
+
+        if ($position !== false) {
+            return $position + 1;
+        }
+
+        return $this->nextSequenceForVillage(
+            $village,
+            $adminRole
+        );
+    }
+
+    /**
+     * Menghitung akun kelurahan pada sebuah kelurahan.
+     * Akun nonaktif juga dihitung.
+     */
+    private function countVillageAdmins(
+        int $villageId,
+        Role $adminRole,
+        ?int $ignoreUserId = null
+    ): int {
+        return User::query()
+            ->where('role_id', $adminRole->id)
+            ->where('village_id', $villageId)
+            ->when(
+                $ignoreUserId !== null,
+                fn ($query) => $query->where(
+                    'id',
+                    '!=',
+                    $ignoreUserId
+                )
+            )
+            ->count();
     }
 
     public function index()
@@ -37,10 +224,19 @@ class VillageAdminController extends Controller
             ->whereHas('role', function ($query) {
                 $query->where('name', 'admin_desa');
             })
-            ->orderBy('name')
+            ->orderBy('village_id')
+            ->orderBy('created_at')
+            ->orderBy('id')
             ->get();
 
-        return view('village_admins.index', compact('admins'));
+        $accountCounts = $admins
+            ->groupBy('village_id')
+            ->map(fn ($accounts) => $accounts->count());
+
+        return view(
+            'village_admins.index',
+            compact('admins', 'accountCounts')
+        );
     }
 
     public function create()
@@ -51,69 +247,76 @@ class VillageAdminController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('village_admins.create', compact('villages'));
+        $adminRole = Role::where(
+            'name',
+            'admin_desa'
+        )->firstOrFail();
+
+        $accountCounts = [];
+        $emailPreviews = [];
+
+        foreach ($villages as $village) {
+            $accountCounts[$village->id] = $this->countVillageAdmins(
+                $village->id,
+                $adminRole
+            );
+
+            $sequence = $this->nextSequenceForVillage(
+                $village,
+                $adminRole
+            );
+
+            $emailPreviews[$village->id] = $this->generateAvailableEmail(
+                $village,
+                $sequence
+            );
+        }
+
+        return view(
+            'village_admins.create',
+            compact(
+                'villages',
+                'accountCounts',
+                'emailPreviews'
+            )
+        );
     }
 
     public function store(Request $request)
     {
         $this->authorizeSuperAdmin();
 
-        /*
-        |--------------------------------------------------------------------------
-        | Cek semua data kosong
-        |--------------------------------------------------------------------------
-        */
-        if (
-            !$request->filled('village_id') &&
-            !$request->filled('name') &&
-            !$request->filled('email') &&
-            !$request->filled('phone') &&
-            !$request->filled('password') &&
-            !$request->filled('password_confirmation')
-        ) {
-            return back()
-                ->withErrors([
-                    'form' => 'Silakan lengkapi semua data.',
-                ])
-                ->withInput();
-        }
+        $adminRole = Role::where(
+            'name',
+            'admin_desa'
+        )->firstOrFail();
 
-        $adminRole = Role::where('name', 'admin_desa')->firstOrFail();
-
-        /*
-        |--------------------------------------------------------------------------
-        | Validasi data
-        |--------------------------------------------------------------------------
-        */
         $validated = $request->validate(
             [
                 'village_id' => [
                     'required',
                     'integer',
                     Rule::exists('villages', 'id')
-                        ->where(fn ($query) => $query->where('is_active', true)),
+                        ->where(
+                            fn ($query) => $query->where(
+                                'is_active',
+                                true
+                            )
+                        ),
                 ],
 
                 'name' => [
                     'required',
                     'string',
-                    'max:30',
+                    'max:100',
                     'regex:/^[\pL ]+$/u',
-                ],
-
-                'email' => [
-                    'required',
-                    'string',
-                    'email',
-                    'max:30',
-                    'unique:users,email',
                 ],
 
                 'phone' => [
                     'required',
                     'string',
-                    'max:15',
                     'min:12',
+                    'max:15',
                     'regex:/^[0-9]+$/',
                     'unique:users,phone',
                 ],
@@ -134,24 +337,19 @@ class VillageAdminController extends Controller
                 'village_id.required' => 'Kelurahan wajib dipilih.',
                 'village_id.exists' => 'Kelurahan tidak valid atau sudah tidak aktif.',
 
-                'name.required' => 'Nama wajib diisi.',
-                'name.max' => 'Nama maksimal 30 karakter.',
-                'name.regex' => 'Nama hanya boleh berisi huruf dan spasi.',
-
-                'email.required' => 'Email wajib diisi.',
-                'email.email' => 'Format email tidak valid.',
-                'email.max' => 'Email maksimal 30 karakter.',
-                'email.unique' => 'Email sudah digunakan.',
+                'name.required' => 'Nama pengelola wajib diisi.',
+                'name.max' => 'Nama pengelola maksimal 100 karakter.',
+                'name.regex' => 'Nama pengelola hanya boleh berisi huruf dan spasi.',
 
                 'phone.required' => 'Nomor telepon wajib diisi.',
-                'phone.max' => 'Nomor telepon maksimal 15 digit.',
                 'phone.min' => 'Nomor telepon minimal 12 digit.',
+                'phone.max' => 'Nomor telepon maksimal 15 digit.',
                 'phone.regex' => 'Nomor telepon hanya boleh berisi angka.',
                 'phone.unique' => 'Nomor telepon sudah terdaftar.',
 
                 'password.required' => 'Password wajib diisi.',
                 'password.min' => 'Password minimal 8 karakter.',
-                'password.regex' => 'Password hanya boleh berisi huruf, angka, dan simbol tanpa spasi.',
+                'password.regex' => 'Password tidak boleh mengandung spasi.',
 
                 'password_confirmation.required' => 'Konfirmasi password wajib diisi.',
                 'password_confirmation.same' => 'Konfirmasi password tidak sama.',
@@ -159,64 +357,59 @@ class VillageAdminController extends Controller
         );
 
         /*
-        |--------------------------------------------------------------------------
-        | Ambil kelurahan yang dipilih
-        |--------------------------------------------------------------------------
-        */
-        $village = Village::where('id', $validated['village_id'])
-            ->where('is_active', true)
-            ->firstOrFail();
+         * Kunci baris kelurahan ketika membuat akun,
+         * agar dua request bersamaan tidak melewati batas 3 akun.
+         */
+        $createdEmail = DB::transaction(function () use (
+            $validated,
+            $adminRole
+        ) {
+            $village = Village::query()
+                ->where('id', $validated['village_id'])
+                ->where('is_active', true)
+                ->lockForUpdate()
+                ->firstOrFail();
 
-        /*
-        |--------------------------------------------------------------------------
-        | Validasi sinkronisasi email dengan kelurahan
-        |--------------------------------------------------------------------------
-        */
-        $expectedEmail = $this->expectedEmailForVillage($village);
+            $accountCount = $this->countVillageAdmins(
+                $village->id,
+                $adminRole
+            );
 
-        if ($validated['email'] !== $expectedEmail) {
-            return back()
-                ->withErrors([
-                    'email' => 'Nama email tidak sinkron.',
-                ])
-                ->withInput();
-        }
+            if ($accountCount >= self::MAX_ACCOUNTS_PER_VILLAGE) {
+                throw ValidationException::withMessages([
+                    'village_id' => 'Kelurahan ini sudah memiliki maksimal 3 akun admin.',
+                ]);
+            }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Satu kelurahan hanya boleh memiliki satu admin
-        |--------------------------------------------------------------------------
-        */
-        $alreadyExists = User::where('role_id', $adminRole->id)
-            ->where('village_id', $validated['village_id'])
-            ->exists();
+            $sequence = $this->nextSequenceForVillage(
+                $village,
+                $adminRole
+            );
 
-        if ($alreadyExists) {
-            return back()
-                ->withErrors([
-                    'village_id' => 'Kelurahan tersebut sudah memiliki akun admin.',
-                ])
-                ->withInput();
-        }
+            $email = $this->generateAvailableEmail(
+                $village,
+                $sequence
+            );
 
-        /*
-        |--------------------------------------------------------------------------
-        | Simpan akun
-        |--------------------------------------------------------------------------
-        */
-        User::create([
-            'role_id' => $adminRole->id,
-            'village_id' => $validated['village_id'],
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'password' => $validated['password'],
-            'phone' => $validated['phone'],
-            'is_active' => true,
-        ]);
+            User::create([
+                'role_id' => $adminRole->id,
+                'village_id' => $village->id,
+                'name' => $validated['name'],
+                'email' => $email,
+                'password' => $validated['password'],
+                'phone' => $validated['phone'],
+                'is_active' => true,
+            ]);
+
+            return $email;
+        });
 
         return redirect()
             ->route('village-admins.index')
-            ->with('success', 'Akun admin kelurahan berhasil ditambahkan.');
+            ->with(
+                'success',
+                "Akun admin kelurahan berhasil ditambahkan. Email: {$createdEmail}"
+            );
     }
 
     public function edit(User $user)
@@ -225,11 +418,6 @@ class VillageAdminController extends Controller
 
         abort_unless($user->isVillageAdmin(), 404);
 
-        /*
-        |--------------------------------------------------------------------------
-        | Akun nonaktif tidak boleh diedit
-        |--------------------------------------------------------------------------
-        */
         if (!$user->is_active) {
             return redirect()
                 ->route('village-admins.index')
@@ -242,7 +430,10 @@ class VillageAdminController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('village_admins.edit', compact('user', 'villages'));
+        return view(
+            'village_admins.edit',
+            compact('user', 'villages')
+        );
     }
 
     public function update(Request $request, User $user)
@@ -251,15 +442,6 @@ class VillageAdminController extends Controller
 
         abort_unless($user->isVillageAdmin(), 404);
 
-        /*
-        |--------------------------------------------------------------------------
-        | Akun nonaktif tidak boleh diedit
-        |--------------------------------------------------------------------------
-        |
-        | Pengecekan ini penting agar akun nonaktif tidak bisa diubah
-        | walaupun URL update dipanggil secara manual.
-        |
-        */
         if (!$user->is_active) {
             return redirect()
                 ->route('village-admins.index')
@@ -268,60 +450,31 @@ class VillageAdminController extends Controller
                 ]);
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Cek semua data kosong
-        |--------------------------------------------------------------------------
-        */
-        if (
-            !$request->filled('village_id') &&
-            !$request->filled('name') &&
-            !$request->filled('email') &&
-            !$request->filled('phone') &&
-            !$request->filled('password') &&
-            !$request->filled('password_confirmation')
-        ) {
-            return back()
-                ->withErrors([
-                    'form' => 'Silakan lengkapi semua data.',
-                ])
-                ->withInput();
-        }
-
-        $adminRole = Role::where('name', 'admin_desa')->firstOrFail();
-
-        /*
-        |--------------------------------------------------------------------------
-        | Validasi data
-        |--------------------------------------------------------------------------
-        */
         $validated = $request->validate(
             [
                 'village_id' => [
                     'required',
                     'integer',
                     Rule::exists('villages', 'id')
-                        ->where(fn ($query) => $query->where('is_active', true)),
+                        ->where(
+                            fn ($query) => $query->where(
+                                'is_active',
+                                true
+                            )
+                        ),
                 ],
 
                 'name' => [
                     'required',
                     'string',
-                    'max:30',
+                    'max:100',
                     'regex:/^[\pL ]+$/u',
-                ],
-
-                'email' => [
-                    'required',
-                    'string',
-                    'email',
-                    'max:30',
-                    Rule::unique('users', 'email')->ignore($user->id),
                 ],
 
                 'phone' => [
                     'required',
                     'string',
+                    'min:12',
                     'max:15',
                     'regex:/^[0-9]+$/',
                     Rule::unique('users', 'phone')->ignore($user->id),
@@ -344,96 +497,101 @@ class VillageAdminController extends Controller
                 'village_id.required' => 'Kelurahan wajib dipilih.',
                 'village_id.exists' => 'Kelurahan tidak valid atau sudah tidak aktif.',
 
-                'name.required' => 'Nama wajib diisi.',
-                'name.max' => 'Nama maksimal 30 karakter.',
-                'name.regex' => 'Nama hanya boleh berisi huruf dan spasi.',
-
-                'email.required' => 'Email wajib diisi.',
-                'email.email' => 'Format email tidak valid.',
-                'email.max' => 'Email maksimal 30 karakter.',
-                'email.unique' => 'Email sudah digunakan.',
+                'name.required' => 'Nama pengelola wajib diisi.',
+                'name.max' => 'Nama pengelola maksimal 100 karakter.',
+                'name.regex' => 'Nama pengelola hanya boleh berisi huruf dan spasi.',
 
                 'phone.required' => 'Nomor telepon wajib diisi.',
+                'phone.min' => 'Nomor telepon minimal 12 digit.',
                 'phone.max' => 'Nomor telepon maksimal 15 digit.',
                 'phone.regex' => 'Nomor telepon hanya boleh berisi angka.',
                 'phone.unique' => 'Nomor telepon sudah terdaftar.',
 
                 'password.min' => 'Password minimal 8 karakter.',
-                'password.regex' => 'Password minimal 8 karakter dan tidak boleh mengandung spasi.',
+                'password.regex' => 'Password tidak boleh mengandung spasi.',
 
                 'password_confirmation.required_with' => 'Konfirmasi password wajib diisi.',
                 'password_confirmation.same' => 'Konfirmasi password tidak sama.',
             ]
         );
 
-        /*
-        |--------------------------------------------------------------------------
-        | Ambil kelurahan yang dipilih dan harus aktif
-        |--------------------------------------------------------------------------
-        */
-        $village = Village::where('id', $validated['village_id'])
-            ->where('is_active', true)
-            ->firstOrFail();
+        $adminRole = Role::where(
+            'name',
+            'admin_desa'
+        )->firstOrFail();
 
-        /*
-        |--------------------------------------------------------------------------
-        | Validasi email harus sesuai kelurahan
-        |--------------------------------------------------------------------------
-        */
-        $expectedEmail = $this->expectedEmailForVillage($village);
+        DB::transaction(function () use (
+            $validated,
+            $adminRole,
+            $user
+        ) {
+            $village = Village::query()
+                ->where('id', $validated['village_id'])
+                ->where('is_active', true)
+                ->lockForUpdate()
+                ->firstOrFail();
 
-        if ($validated['email'] !== $expectedEmail) {
-            return back()
-                ->withErrors([
-                    'email' => 'Nama email tidak sinkron.',
-                ])
-                ->withInput();
-        }
+            $sameVillage = (int) $user->village_id === (int) $village->id;
 
-        /*
-        |--------------------------------------------------------------------------
-        | Satu kelurahan hanya boleh memiliki satu admin
-        |--------------------------------------------------------------------------
-        */
-        $alreadyExists = User::where('role_id', $adminRole->id)
-            ->where('village_id', $validated['village_id'])
-            ->where('id', '!=', $user->id)
-            ->exists();
+            /*
+             * Kalau dipindahkan ke kelurahan lain,
+             * pastikan kelurahan tujuan masih punya kapasitas.
+             */
+            if (!$sameVillage) {
+                $accountCount = $this->countVillageAdmins(
+                    $village->id,
+                    $adminRole
+                );
 
-        if ($alreadyExists) {
-            return back()
-                ->withErrors([
-                    'village_id' => 'Kelurahan tersebut sudah memiliki akun admin.',
-                ])
-                ->withInput();
-        }
+                if ($accountCount >= self::MAX_ACCOUNTS_PER_VILLAGE) {
+                    throw ValidationException::withMessages([
+                        'village_id' => 'Kelurahan tujuan sudah memiliki maksimal 3 akun admin.',
+                    ]);
+                }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Update data
-        |--------------------------------------------------------------------------
-        */
-        $user->update([
-            'village_id' => $validated['village_id'],
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'phone' => $validated['phone'],
-        ]);
+                $sequence = $this->nextSequenceForVillage(
+                    $village,
+                    $adminRole
+                );
+            } else {
+                /*
+                 * Pertahankan nomor akun yang sudah benar.
+                 * Akun lama tanpa nomor akan diberi nomor
+                 * berdasarkan urutan pembuatan.
+                 */
+                $sequence = $this->sequenceForExistingAccount(
+                    $user,
+                    $village,
+                    $adminRole
+                );
+            }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Update password jika diisi
-        |--------------------------------------------------------------------------
-        */
-        if (!empty($validated['password'])) {
-            $user->update([
-                'password' => $validated['password'],
-            ]);
-        }
+            $email = $this->generateAvailableEmail(
+                $village,
+                $sequence,
+                $user->id
+            );
+
+            $data = [
+                'village_id' => $village->id,
+                'name' => $validated['name'],
+                'email' => $email,
+                'phone' => $validated['phone'],
+            ];
+
+            if (!empty($validated['password'])) {
+                $data['password'] = $validated['password'];
+            }
+
+            $user->update($data);
+        });
 
         return redirect()
             ->route('village-admins.index')
-            ->with('success', 'Akun admin kelurahan berhasil diperbarui.');
+            ->with(
+                'success',
+                "Akun admin kelurahan berhasil diperbarui. Email: {$user->fresh()->email}"
+            );
     }
 
     public function toggleStatus(User $user)
@@ -450,8 +608,8 @@ class VillageAdminController extends Controller
             ->route('village-admins.index')
             ->with(
                 'success',
-                'Status akun berhasil diubah menjadi ' .
-                ($user->is_active ? 'aktif.' : 'nonaktif.')
+                'Status akun berhasil diubah menjadi '
+                    . ($user->is_active ? 'aktif.' : 'nonaktif.')
             );
     }
 }
