@@ -112,14 +112,6 @@ class _CitizenMainScreenState extends State<CitizenMainScreen> {
               const Divider(),
               const SizedBox(height: 8),
               ListTile(
-                leading: const Icon(Icons.location_city_rounded, color: AppTheme.primaryColor),
-                title: const Text('Wilayah Penugasan / Domisili', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-                subtitle: Text(
-                  user?.villageName != null ? 'Kelurahan ${user!.villageName!}, Sumbersari' : 'Kecamatan Sumbersari',
-                  style: const TextStyle(fontSize: 12),
-                ),
-              ),
-              ListTile(
                 leading: const Icon(Icons.phone_rounded, color: AppTheme.primaryColor),
                 title: const Text('Nomor Telepon', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
                 subtitle: Text(user?.phone ?? '-', style: const TextStyle(fontSize: 12)),
