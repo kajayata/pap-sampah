@@ -4,11 +4,11 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
-- Fase 4 Selesai -> Siap masuk Integrasi Client Mobile Flutter (Masyarakat & Petugas)
+- Fase 5: Finalisasi Integrasi Mobile Flutter + Monitoring Super Admin + Bugfix
 
 ## Current Goal
 
-- Integrasi penuh REST API Laravel ke aplikasi mobile Flutter (`mobile-app/mobile/`) untuk fitur pelaporan warga, peta sampah, bank sampah, TPA, berita, cuaca, dan task management petugas kebersihan.
+- Finalisasi integrasi mobile Flutter (masyarakat & petugas), pastikan dashboard monitoring Super Admin Kecamatan penuh, lalu bereskan bug yang terdaftar di bagian Bugs.
 
 ## Completed
 
@@ -43,6 +43,16 @@ Update this file after every meaningful implementation change.
 eature Test Suite Fase 4 (`Fase4FeatureTest.php`):
   - 100% lulus (20 tests passed, 125 assertions) mencakup seluruh endpoint publik spasial dan web controller
 - [x] Integrasi Navigasi Sidebar Admin Web: Link Dashboard, Peta & Heatmap, Laporan, Petugas, Bank Sampah, TPA, dan Berita tersedia di sidebar responsif desktop/mobile dengan menu sesuai role
+
+- [x] Integrasi penuh REST API Laravel ke aplikasi mobile Flutter (`mobile-app/mobile/`):
+  - Splash screen + token storage (Sanctum PAT) + auth screen login/register
+  - Citizen: home tab (statistik, cuaca, berita), create report (foto + GPS + kategori), report list/detail (status, timeline, foto before/after), spatial map tab (heatmap, marker aktif/selesai, layer bank sampah & TPA), bank sampah & TPA tab, news detail, notifications screen
+  - Worker: task list, task detail (accept, reject + alasan wajib, upload foto BEFORE/AFTER, complete dengan guard Invariant #3 minimal 1 foto AFTER)
+  - Layer provider + service lengkap: auth, report, worker task, public (map/weather/news/bank sampah/TPA), notification
+- [x] Revisi fitur kelola akun kelurahan (`VillageAdminController.php`): perbaikan besar CRUD + fitur auto-name akun kelurahan (commit 346f0dc)
+- [x] Dashboard metrics & visualisasi status disesuaikan per role admin (commit e61aa89, ae50481)
+- [x] Penambahan fitur admin & perbaikan bug petugas/user, filter simbol di alamat, minimisasi duplikat no telp (commits 6bd88c5, fe8d2be, b41921b, d8362e8)
+- [x] Fix gambar tidak muncul (commit f157106)
 
 - [x] Service Penugasan & Pembersihan (`CleanupTaskService.php`):
   - Penugasan multi-petugas kebersihan desa dengan catatan instruksi kerja & daftar alat/barang yang perlu dibawa (Invariant #3 & #4)
@@ -94,14 +104,20 @@ eature Test Suite Fase 4 (`Fase4FeatureTest.php`):
 
 ## In Progress
 
-- None currently.
+- Verifikasi kelengkapan dashboard monitoring Super Admin Kecamatan (`dashboard/index.blade.php`) terhadap Success Criteria #5 (monitoring laporan & kegiatan seluruh desa).
 
 ## Next Up
 
-- [ ] Peta Spasial & Heatmap Kecamatan Sumbersari (Titik sampah aktif vs selesai H+7)
-- [ ] Master Data & API Publik: Bank Sampah, TPA, Berita, & Cuaca
-- [ ] Dashboard Monitoring Super Admin Kecamatan
-- [ ] Integrasi Layar Aplikasi Mobile Flutter (Masyarakat & Petugas)
+- [ ] Selesaikan & verifikasi dashboard monitoring Super Admin Kecamatan
+- [ ] Testing end-to-end mobile Flutter <-> REST API Laravel (masyarakat & petugas)
+- [ ] Polish notifikasi realtime bila diperlukan
+
+## Bugs
+
+- [x] Mobile: UI home tab ikon atas tidak terlihat karena AppBar putih + ikon putih. Fix: `AppBarTheme.backgroundColor` → `primaryColor`, foreground putih (commit ca5b09f).
+- [x] Mobile: Warga tidak bisa laporan (422). Fix: field multipart `photo` → `photos[]` agar backend membaca array (commit 8808c39).
+- [x] Mobile: Gambar berita/foto tidak muncul karena URL media pakai host APP_URL (`localhost`). Fix: `ApiConstants.normalizeMediaUrl` diterapkan di model berita/laporan/tugas/peta (commit b680cf4).
+- [x] Mobile: CTA logout profil warga sulit ditap (overflow bottom sheet). Fix: `SingleChildScrollView` + `isScrollControlled` + `useSafeArea` (commit a5a2376).
 
 ## Open Questions
 
