@@ -104,16 +104,18 @@ eature Test Suite Fase 4 (`Fase4FeatureTest.php`):
 
 ## In Progress
 
-- None currently.
+- Test-infra rot: suite backend memakai database dev `papsampah` yang sama tanpa isolasi (tanpa `RefreshDatabase`), sehingga test tidak idempoten dan saling mencemari. Dua test pre-existing gagal: (1) `waste bank search matches phone` — kolom `waste_banks.phone` bertipe `bigint` (migrasi 2026_10_01), leading zero hilang; (2) `news draft status...` — judul berita duplikat terakumulasi dari run sebelumnya.
 
 ## Next Up
 
-- [ ] Testing end-to-end mobile Flutter <-> REST API Laravel (masyarakat & petugas)
+- [ ] Putuskan strategi isolasi test backend (DB `papsampah_test` + `RefreshDatabase`, atau `DatabaseTransactions`).
+- [ ] Smoke test manual mobile di device (`php artisan serve` + `adb reverse tcp:8000 tcp:8000`).
 
 ## Completed (Fase 5)
 
 - [x] Verifikasi dashboard monitoring Super Admin Kecamatan: `DashboardTest` lulus (2 tests, 8 assertions) — panel ringkasan, distribusi status, petugas teraktif, dan "Laporan Aktif per Kelurahan" hanya tampil untuk Super Admin.
 - [x] Bugfix mobile (lihat bagian Bugs): AppBar hijau, submit laporan `photos[]`, normalisasi URL media, CTA logout profil.
+- [x] E2E test `Fase5WorkflowTest`: alur penuh lewat REST API + web admin (submit laporan multipart `photos[]` → validasi & tugaskan → petugas accept/upload AFTER/complete → admin verifikasi → RESOLVED) lulus (16 assertions).
 
 ## Bugs
 
