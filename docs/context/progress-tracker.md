@@ -104,13 +104,16 @@ eature Test Suite Fase 4 (`Fase4FeatureTest.php`):
 
 ## In Progress
 
-- Verifikasi kelengkapan dashboard monitoring Super Admin Kecamatan (`dashboard/index.blade.php`) terhadap Success Criteria #5 (monitoring laporan & kegiatan seluruh desa).
+- None currently.
 
 ## Next Up
 
-- [ ] Selesaikan & verifikasi dashboard monitoring Super Admin Kecamatan
 - [ ] Testing end-to-end mobile Flutter <-> REST API Laravel (masyarakat & petugas)
-- [ ] Polish notifikasi realtime bila diperlukan
+
+## Completed (Fase 5)
+
+- [x] Verifikasi dashboard monitoring Super Admin Kecamatan: `DashboardTest` lulus (2 tests, 8 assertions) — panel ringkasan, distribusi status, petugas teraktif, dan "Laporan Aktif per Kelurahan" hanya tampil untuk Super Admin.
+- [x] Bugfix mobile (lihat bagian Bugs): AppBar hijau, submit laporan `photos[]`, normalisasi URL media, CTA logout profil.
 
 ## Bugs
 
