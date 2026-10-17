@@ -22,7 +22,7 @@
     </div>
 
     @if(session('error'))
-        <div role="alert" class="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-sm" aria-live="assertive">
+        <div data-auto-dismiss role="alert" class="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-sm" aria-live="assertive">
             {{ session('error') }}
         </div>
     @endif

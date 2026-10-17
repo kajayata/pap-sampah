@@ -366,7 +366,7 @@
         {{-- SUCCESS MESSAGE --}}
         @if(session('success'))
             <div class="mx-auto mt-4 max-w-7xl px-6">
-                <div class="rounded-2xl border border-accent-primary/20 bg-accent-primary/10 p-4 text-sm font-medium text-accent-primary">
+                <div data-auto-dismiss class="rounded-2xl border border-accent-primary/20 bg-accent-primary/10 p-4 text-sm font-medium text-accent-primary">
                     {{ session('success') }}
                 </div>
             </div>
@@ -451,6 +451,21 @@
             })();
         </script>
     @endauth
+
+    {{-- AUTO-DISMISS FLASH ALERT: sembunyikan alert setelah beberapa detik --}}
+    <script>
+        (() => {
+            document.querySelectorAll('[data-auto-dismiss]').forEach((el) => {
+                const delay = Number(el.dataset.autoDismiss) || 4000;
+                setTimeout(() => {
+                    el.style.transition = 'opacity .4s ease, transform .4s ease';
+                    el.style.opacity = '0';
+                    el.style.transform = 'translateY(-8px)';
+                    setTimeout(() => el.remove(), 400);
+                }, delay);
+            });
+        })();
+    </script>
 
     @stack('scripts')
 </body>

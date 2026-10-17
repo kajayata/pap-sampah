@@ -29,14 +29,14 @@
 
     {{-- PESAN BERHASIL --}}
     @if(session('success'))
-        <div class="mb-4 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-green-700">
+        <div data-auto-dismiss class="mb-4 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-green-700">
             {{ session('success') }}
         </div>
     @endif
 
     {{-- PESAN ERROR --}}
     @if(session('error'))
-        <div class="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-red-700">
+        <div data-auto-dismiss class="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-red-700">
             {{ session('error') }}
         </div>
     @endif
