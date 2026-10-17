@@ -37,13 +37,14 @@ class AppTheme {
         onSurface: textPrimary,
       ),
       appBarTheme: const AppBarTheme(
-        backgroundColor: surface,
+        backgroundColor: emphasis,
+        foregroundColor: Colors.white,
         elevation: 0,
         centerTitle: false,
         scrolledUnderElevation: 0.5,
-        iconTheme: IconThemeData(color: textPrimary),
+        iconTheme: IconThemeData(color: Colors.white),
         titleTextStyle: TextStyle(
-          color: textPrimary,
+          color: Colors.white,
           fontSize: 18,
           fontWeight: FontWeight.bold,
           letterSpacing: -0.2,
