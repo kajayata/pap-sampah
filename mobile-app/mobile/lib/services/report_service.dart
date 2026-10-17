@@ -58,7 +58,7 @@ class ReportService {
     };
 
     final multipartFile = await http.MultipartFile.fromPath(
-      'photo',
+      'photos[]',
       photoFile.path,
     );
 
