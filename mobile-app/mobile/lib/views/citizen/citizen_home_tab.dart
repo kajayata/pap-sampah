@@ -87,20 +87,6 @@ class _CitizenHomeTabState extends State<CitizenHomeTab> {
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
-                              const SizedBox(height: 2),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: AppTheme.secondaryColor.withValues(alpha: 0.3),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Text(
-                                  user?.villageName != null
-                                      ? 'Kelurahan ${user!.villageName!}'
-                                      : 'Kecamatan Sumbersari, Jember',
-                                  style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600),
-                                ),
-                              ),
                             ],
                           ),
                         ),
