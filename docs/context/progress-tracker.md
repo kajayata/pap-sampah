@@ -104,11 +104,19 @@ eature Test Suite Fase 4 (`Fase4FeatureTest.php`):
 
 ## In Progress
 
-- Test-infra rot: suite backend memakai database dev `papsampah` yang sama tanpa isolasi (tanpa `RefreshDatabase`), sehingga test tidak idempoten dan saling mencemari. Dua test pre-existing gagal: (1) `waste bank search matches phone` — kolom `waste_banks.phone` bertipe `bigint` (migrasi 2026_10_01), leading zero hilang; (2) `news draft status...` — judul berita duplikat terakumulasi dari run sebelumnya.
+- None currently.
+
+## Known Issues (pre-existing, diputuskan untuk dicatat saja)
+
+- Test backend memakai database dev `papsampah` tanpa isolasi (tanpa `RefreshDatabase`), sehingga tidak idempoten. Dua test gagal dan belum diperbaiki:
+  1. `waste bank search matches phone and description` — kolom `waste_banks.phone` bertipe `bigint` (migrasi `2026_10_01_000002`), leading zero `0` hilang sehingga pencarian nomor gagal.
+  2. `news draft status does not display publish date in table` — judul berita duplikat terakumulasi antar-run pada DB yang sama → update ke DRAFT kena validasi judul unik.
+- Sisa test lain (35) lulus, termasuk `Fase5WorkflowTest` dan `DashboardTest`.
 
 ## Next Up
 
-- [ ] Putuskan strategi isolasi test backend (DB `papsampah_test` + `RefreshDatabase`, atau `DatabaseTransactions`).
+- [ ] (Opsional) Isolasi test backend: DB `papsampah_test` + `RefreshDatabase`, atau `DatabaseTransactions`.
+- [ ] (Opsional) Kembalikan `waste_banks.phone` ke `varchar` + reseed agar leading zero terjaga.
 - [ ] Smoke test manual mobile di device (`php artisan serve` + `adb reverse tcp:8000 tcp:8000`).
 
 ## Completed (Fase 5)
