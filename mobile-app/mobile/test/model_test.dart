@@ -116,6 +116,16 @@ void main() {
       });
       expect(bank.name, 'Bank Sampah Resik Sejahtera');
 
+      // Backend mengirim phone sebagai int (kolom bigint), bukan String.
+      final bankIntPhone = WasteBank.fromJson({
+        'id': 6,
+        'name': 'Bank Sampah Asri',
+        'phone': 8123456706,
+        'latitude': -8.201,
+        'longitude': 113.735,
+      });
+      expect(bankIntPhone.phone, '8123456706');
+
       final landfill = Landfill.fromJson({
         'id': 1,
         'name': 'TPA Sumbersari',

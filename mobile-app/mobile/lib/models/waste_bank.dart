@@ -33,7 +33,7 @@ class WasteBank {
       id: json['id'] is int ? json['id'] : int.tryParse(json['id'].toString()) ?? 0,
       name: json['name'] ?? '',
       address: json['address'],
-      phone: json['phone'],
+      phone: json['phone']?.toString(),
       description: json['description'],
       isActive: json['is_active'] ?? true,
       latitude: json['latitude'] is num ? (json['latitude'] as num).toDouble() : double.tryParse(json['latitude']?.toString() ?? '0') ?? 0.0,
