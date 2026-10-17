@@ -1,3 +1,4 @@
+import '../core/constants/api_constants.dart';
 import 'waste_category.dart';
 
 class WasteReportPhoto {
@@ -14,7 +15,7 @@ class WasteReportPhoto {
   factory WasteReportPhoto.fromJson(Map<String, dynamic> json) {
     return WasteReportPhoto(
       id: json['id'] ?? 0,
-      url: json['url'] ?? '',
+      url: ApiConstants.normalizeMediaUrl(json['url']) ?? '',
       isAfter: json['type'] == 'AFTER' || json['is_after'] == true,
     );
   }
@@ -102,7 +103,7 @@ class WasteReport {
           .toList();
     } else if (json['primary_photo_url'] != null) {
       reportPhotos = [
-        WasteReportPhoto(id: 0, url: json['primary_photo_url']),
+        WasteReportPhoto(id: 0, url: ApiConstants.normalizeMediaUrl(json['primary_photo_url']) ?? ''),
       ];
     }
 

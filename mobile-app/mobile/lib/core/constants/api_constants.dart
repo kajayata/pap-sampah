@@ -58,4 +58,32 @@ class ApiConstants {
   static String newsDetail(String slug) => '$_baseUrl/news/$slug';
   static String get weather => '$_baseUrl/weather';
   static String get settings => '$_baseUrl/settings';
+
+  /// Normalisasi URL media dari backend.
+  ///
+  /// Backend membangun URL foto dari `APP_URL` (mis. `http://localhost:8000`)
+  /// yang bisa berbeda dari host API yang dijangkau device (mis. `127.0.0.1`
+  /// via adb reverse). Ganti origin URL agar menunjuk ke host API yang aktif.
+  static String? normalizeMediaUrl(String? raw) {
+    if (raw == null || raw.trim().isEmpty) return null;
+
+    final apiOrigin = Uri.parse(_baseUrl); // http://host:port/api
+    final origin = Uri(
+      scheme: apiOrigin.scheme,
+      host: apiOrigin.host,
+      port: apiOrigin.hasPort ? apiOrigin.port : null,
+    );
+
+    final uri = Uri.tryParse(raw);
+    if (uri == null) return raw;
+
+    if (uri.hasScheme) {
+      return origin
+          .replace(path: uri.path, query: uri.hasQuery ? uri.query : null)
+          .toString();
+    }
+
+    final path = raw.startsWith('/') ? raw : '/$raw';
+    return origin.replace(path: path).toString();
+  }
 }

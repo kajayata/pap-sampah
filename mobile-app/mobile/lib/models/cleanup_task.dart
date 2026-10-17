@@ -1,3 +1,4 @@
+import '../core/constants/api_constants.dart';
 import 'waste_report.dart';
 
 class CleanupTaskPhoto {
@@ -26,7 +27,7 @@ class CleanupTaskPhoto {
 
     return CleanupTaskPhoto(
       id: json['id'] is int ? json['id'] : int.tryParse(json['id'].toString()) ?? 0,
-      url: json['url'] ?? '',
+      url: ApiConstants.normalizeMediaUrl(json['url']) ?? '',
       type: json['type'] ?? 'AFTER',
       uploaderName: uploader ?? json['uploader_name'],
       createdAt: json['created_at'] != null ? DateTime.tryParse(json['created_at']) : null,

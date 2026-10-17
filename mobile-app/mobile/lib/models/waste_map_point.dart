@@ -1,5 +1,6 @@
-class WasteMapPoint {
-  final int id;
+import '../core/constants/api_constants.dart';
+
+class WasteMapPoint {  final int id;
   final String reportCode;
   final double latitude;
   final double longitude;
@@ -46,7 +47,7 @@ class WasteMapPoint {
       description: json['description'],
       createdAtFormatted: json['created_at_formatted'],
       resolvedAtFormatted: json['resolved_at_formatted'],
-      primaryPhotoUrl: json['primary_photo_url'],
+      primaryPhotoUrl: ApiConstants.normalizeMediaUrl(json['primary_photo_url']),
     );
   }
 }
