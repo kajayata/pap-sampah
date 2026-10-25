@@ -15,8 +15,6 @@ class WorkerController extends Controller
 {
     /**
      * Tampilkan daftar petugas kebersihan.
-     * Admin Desa hanya melihat petugas di desanya.
-     * Super Admin Kecamatan dapat melihat seluruh petugas atau memfilter per desa.
      */
     public function index(Request $request)
     {
@@ -41,7 +39,6 @@ class WorkerController extends Controller
             $selectedVillage = $user->village;
             $villages = collect([$selectedVillage]);
         } else {
-            // Super Admin Kecamatan
             if ($request->filled('village_id')) {
                 $query->where('village_id', $request->village_id);
             }
@@ -62,7 +59,8 @@ class WorkerController extends Controller
 
         $workers = $query->latest('id')->paginate(10)->withQueryString();
 
-        return view('petugas.index', compact('workers', 'villages', 'selectedVillage'));
+        // Diubah ke folder 'worker'
+        return view('worker.index', compact('workers', 'villages', 'selectedVillage'));
     }
 
     /**
@@ -77,11 +75,12 @@ class WorkerController extends Controller
             ? collect([$user->village])
             : Village::where('is_active', true)->orderBy('name')->get();
 
-        return view('petugas.create', compact('villages'));
+        // Diubah ke folder 'worker'
+        return view('worker.create', compact('villages'));
     }
 
     /**
-     * Simpan petugas kebersihan baru.
+     * Simpan petugas kebersihan baru dengan Auto-Increment Email yang aman.
      */
     public function store(Request $request)
     {
@@ -94,15 +93,34 @@ class WorkerController extends Controller
             ? $user->village_id
             : $request->village_id;
 
+        $village = Village::findOrFail($villageId);
+        $slugVillage = strtolower(str_replace(' ', '', $village->name));
+
+        // Auto-increment nomor email berdasarkan jumlah petugas di kelurahan tersebut
+        $countInVillage = User::where('village_id', $villageId)
+            ->where('role_id', $petugasRole->id)
+            ->count();
+        
+        $nextNumber = $countInVillage + 1;
+        $generatedEmail = "petugas{$nextNumber}.{$slugVillage}@papsampah.id";
+
+        // Pastikan nomor increment aman dari bentrok/duplikat
+        while (User::where('email', $generatedEmail)->exists()) {
+            $nextNumber++;
+            $generatedEmail = "petugas{$nextNumber}.{$slugVillage}@papsampah.id";
+        }
+
+        if (!$request->filled('email') || $request->email === "petugas.{$slugVillage}@papsampah.id") {
+            $request->merge(['email' => $generatedEmail]);
+        }
+
         $validated = $request->validate([
-            // 1. Nama wajib string & tidak boleh diawali angka
             'name' => [
                 'required',
                 'string',
                 'max:255',
                 'regex:/^[a-zA-Z\s]+$/'
             ],
-            // 2. Email wajib unik di tabel users
             'email' => [
                 'required',
                 'string',
@@ -112,7 +130,6 @@ class WorkerController extends Controller
                 'unique:users,email'
             ],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
-            // 3. Nomor telepon harus unik, berupa angka, dan diawali 08
             'phone' => [
                 'required',
                 'string',
@@ -142,12 +159,13 @@ class WorkerController extends Controller
             'village_id' => $villageId,
             'name' => $validated['name'],
             'email' => $validated['email'],
-            'password' => $validated['password'],
+            'password' => Hash::make($validated['password']),
             'phone' => $validated['phone'],
             'is_active' => true,
         ]);
 
-        return redirect()->route('petugas.index')
+        // Route diarahkan ke worker.index
+        return redirect()->route('worker.index')
             ->with('success', "Petugas kebersihan '{$validated['name']}' berhasil ditambahkan.");
     }
 
@@ -166,7 +184,8 @@ class WorkerController extends Controller
             ? collect([$user->village])
             : Village::where('is_active', true)->orderBy('name')->get();
 
-        return view('petugas.edit', compact('worker', 'villages'));
+        // Diubah ke folder 'worker'
+        return view('worker.edit', compact('worker', 'villages'));
     }
 
     /**
@@ -215,7 +234,7 @@ class WorkerController extends Controller
         }
 
         $validated = $request->validate($rules, [
-            'name.regex' => 'Nama petugas tidak boleh diawali dengan angka ataupun simbol.',
+            'name.regex' => 'Nama petugas tidak boleh diawali dengan angka maupun simbol.',
             'email.unique' => 'Email ini sudah digunakan oleh pengguna lain.',
             'email.ends_with' => 'Email harus diakhiri dengan @papsampah.id.',
             'phone.required' => 'Nomor telepon wajib diisi.',
@@ -235,7 +254,7 @@ class WorkerController extends Controller
         ];
 
         if ($request->filled('password')) {
-            $updateData['password'] = $validated['password'];
+            $updateData['password'] = Hash::make($validated['password']);
         }
 
         if ($user->hasRole('super_admin_kecamatan')) {
@@ -244,7 +263,8 @@ class WorkerController extends Controller
 
         $worker->update($updateData);
 
-        return redirect()->route('petugas.index')
+        // Route diarahkan ke worker.index
+        return redirect()->route('worker.index')
             ->with('success', "Data petugas '{$worker->name}' berhasil diperbarui.");
     }
 
@@ -267,10 +287,43 @@ class WorkerController extends Controller
         return redirect()->back()
             ->with('success', "Akun petugas '{$worker->name}' berhasil {$statusText}.");
     }
-
+    
     /**
-     * Pastikan pengguna adalah Admin Desa atau Super Admin.
+     * Hapus data petugas kebersihan.
      */
+    public function destroy($id)
+    {
+        $user = Auth::user();
+        $this->authorizeAdmin($user);
+
+        $petugas = User::findOrFail($id);
+
+        if (!$petugas->hasRole('petugas_desa')) {
+            // Route diarahkan ke worker.index
+            return redirect()->route('worker.index')
+                ->with('error', 'Akun tersebut bukan petugas kebersihan.');
+        }
+
+        $namaPetugas = $petugas->name;
+
+        try {
+            $petugas->delete();
+        } catch (\Illuminate\Database\QueryException $e) {
+            // Kode error 23503 pada PostgreSQL menandakan adanya pelanggaran Foreign Key Constraint
+            if ($e->getCode() == '23503') {
+                // Route diarahkan ke worker.index
+                return redirect()->route('worker.index')
+                    ->with('error', "Petugas '{$namaPetugas}' tidak dapat dihapus karena masih memiliki riwayat aktivitas atau laporan dalam sistem. Sebagai alternatif, silakan nonaktifkan akun ini.");
+            }
+            
+            throw $e;
+        }
+
+        // Route diarahkan ke worker.index
+        return redirect()->route('worker.index')
+            ->with('success', "Petugas kebersihan '{$namaPetugas}' berhasil dihapus.");
+    }
+
     private function authorizeAdmin($user): void
     {
         if (! $user->hasRole('admin_desa') && ! $user->hasRole('super_admin_kecamatan')) {
@@ -278,9 +331,6 @@ class WorkerController extends Controller
         }
     }
 
-    /**
-     * Validasi scope wilayah (Invariant #4 & #10): Admin Desa hanya boleh mengelola petugas desanya sendiri.
-     */
     private function validateWorkerScope($user, User $worker): void
     {
         if (! $worker->hasRole('petugas_desa')) {

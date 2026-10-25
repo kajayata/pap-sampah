@@ -4,6 +4,11 @@
 
 @section('content')
 <div class="max-w-7xl mx-auto px-6 py-8">
+    @if(session('error'))
+    <div class="mb-4 p-4 bg-accent-danger/10 border border-accent-danger text-accent-danger rounded-2xl text-sm">
+        {{ session('error') }}
+    </div>
+    @endif
 
     {{-- Breadcrumb & Header --}}
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
@@ -19,7 +24,7 @@
         </div>
 
         <div>
-            <a href="{{ route('petugas.create') }}" class="inline-flex items-center gap-2 px-5 py-2.5 bg-accent-primary text-white font-medium text-sm rounded-xl hover:-translate-y-0.5 shadow-sm hover:shadow transition-all duration-200">
+            <a href="{{ route('worker.create') }}" class="inline-flex items-center gap-2 px-5 py-2.5 bg-accent-primary text-white font-medium text-sm rounded-xl hover:-translate-y-0.5 shadow-sm hover:shadow transition-all duration-200">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="12" y1="5" x2="12" y2="19"/>
                     <line x1="5" y1="12" x2="19" y2="12"/>
@@ -31,7 +36,7 @@
 
     {{-- Filter & Search Card --}}
     <div class="bg-surface rounded-2xl border border-border-default p-4 mb-6">
-        <form method="GET" action="{{ route('petugas.index') }}" class="flex flex-col sm:flex-row items-center gap-3">
+        <form method="GET" action="{{ route('worker.index') }}" class="flex flex-col sm:flex-row items-center gap-3">
             {{-- Search input --}}
             <div class="relative flex-1 w-full">
                 <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-text-muted/60">
@@ -60,7 +65,7 @@
             </button>
 
             @if(request()->hasAny(['search', 'village_id']))
-                <a href="{{ route('petugas.index') }}" class="w-full sm:w-auto px-4 py-2 text-sm text-text-muted hover:text-accent-danger transition-colors text-center">
+                <a href="{{ route('worker.index') }}" class="w-full sm:w-auto px-4 py-2 text-sm text-text-muted hover:text-accent-danger transition-colors text-center">
                     Reset
                 </a>
             @endif
@@ -87,7 +92,7 @@
                         Daftarkan petugas kebersihan desa agar mereka dapat menerima dan melaksanakan tugas pembersihan sampah melalui aplikasi mobile.
                     @endif
                 </p>
-                <a href="{{ route('petugas.create') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-accent-primary text-white text-sm font-medium rounded-xl hover:-translate-y-0.5 transition-all">
+                <a href="{{ route('worker.create') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-accent-primary text-white text-sm font-medium rounded-xl hover:-translate-y-0.5 transition-all">
                     Tambah Petugas Pertama
                 </a>
             </div>
@@ -159,7 +164,7 @@
                             <td class="py-4 px-6 text-right">
                                 <div class="flex items-center justify-end gap-2">
                                     {{-- Edit button --}}
-                                    <a href="{{ route('petugas.edit', $worker->id) }}" class="p-2 text-text-muted hover:text-accent-primary hover:bg-accent-primary/10 rounded-lg transition-colors" title="Edit Data Petugas">
+                                    <a href="{{ route('worker.edit', $worker->id) }}" class="p-2 text-text-muted hover:text-accent-primary hover:bg-accent-primary/10 rounded-lg transition-colors" title="Edit Data Petugas">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                             <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
                                             <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
@@ -167,7 +172,7 @@
                                     </a>
 
                                     {{-- Toggle Status button --}}
-                                    <form method="POST" action="{{ route('petugas.toggle-status', $worker->id) }}" onsubmit="return confirm('Apakah Anda yakin ingin {{ $worker->is_active ? 'menonaktifkan' : 'mengaktifkan' }} petugas ini?')">
+                                    <form method="POST" action="{{ route('worker.toggle-status', $worker->id) }}" onsubmit="return confirm('Apakah Anda yakin ingin {{ $worker->is_active ? 'menonaktifkan' : 'mengaktifkan' }} petugas ini?')">
                                         @csrf
                                         @method('PATCH')
                                         <button type="submit" class="p-2 {{ $worker->is_active ? 'text-accent-warning hover:bg-accent-warning/10' : 'text-accent-primary hover:bg-accent-primary/10' }} rounded-lg transition-colors" title="{{ $worker->is_active ? 'Nonaktifkan Akun' : 'Aktifkan Akun' }}">
@@ -184,6 +189,18 @@
                                             @endif
                                         </button>
                                     </form>
+
+                                    {{-- Ganti form hapus pada index.blade.php bagian tabel aksi --}}
+                            <form method="POST" action="{{ route('worker.destroy', $worker->id) }}" onsubmit="return confirm('Apakah Anda yakin ingin menghapus akun petugas kebersihan ini?')">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="p-2 text-text-muted hover:text-accent-danger hover:bg-accent-danger/10 rounded-lg transition-colors" title="Hapus Akun Petugas">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="3 6 5 6 21 6"></polyline>
+                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                    </svg>
+                                </button>
+                            </form>
                                 </div>
                             </td>
                         </tr>
@@ -191,6 +208,7 @@
                     </tbody>
                 </table>
             </div>
+            
 
             {{-- Pagination --}}
             @if($workers->hasPages())

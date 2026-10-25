@@ -23,16 +23,19 @@ class UserSeeder extends Seeder
                 'name' => 'Budi Santoso',
                 'email' => 'budi.santoso@gmail.com',
                 'phone' => '081234567890',
+                'kecamatan_id' => 4, // Ganti dengan ID kecamatan yang sesuai
             ],
             [
                 'name' => 'Siti Aminah',
                 'email' => 'siti.aminah@yahoo.com',
                 'phone' => '085712345678',
+                'kecamatan_id' => 2, // Ganti dengan ID kecamatan yang sesuai
             ],
             [
                 'name' => 'Ahmad Fauzi',
                 'email' => 'ahmad.fauzi@outlook.com',
                 'phone' => '088198765432',
+                'kecamatan_id' => 1, // Ganti dengan ID kecamatan yang sesuai
             ],
         ];
 

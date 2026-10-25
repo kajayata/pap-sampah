@@ -6,25 +6,23 @@
 <div class="max-w-3xl mx-auto px-6 py-8">
 
     <div class="flex items-center gap-3">
-        <a href="{{ route('petugas.index') }}"
+        <a href="{{ route('worker.index') }}"
            class="p-2 rounded-xl bg-white border border-slate-200 text-slate-600 hover:text-slate-900 transition">
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
         </a>
         <div class="mb-8">
-        <h1 class="text-2xl font-bold font-serif text-slate-900">Tambah Petugas Kebersihan</h1>
-        <p class="text-xs text-slate-500">
-            Daftarkan akun petugas kebersihan desa baru. 
-        </p>
+            <h1 class="text-2xl font-bold font-serif text-slate-900">Tambah Petugas Kebersihan</h1>
+            <p class="text-xs text-slate-500">
+                Daftarkan akun petugas kebersihan desa baru. 
+            </p>
+        </div>
     </div>
-    </div>
-    {{-- Header --}}
-    
 
     {{-- Form Card --}}
     <div class="bg-surface rounded-3xl border border-border-default p-6 sm:p-8 shadow-sm">
-        <form method="POST" action="{{ route('petugas.store') }}" class="space-y-6">
+        <form method="POST" action="{{ route('worker.store') }}" class="space-y-6">
             @csrf
 
             {{-- Nama Lengkap --}}
@@ -44,52 +42,20 @@
                 @enderror
             </div>
 
-            {{-- Email --}}
-            <div>
-                <label for="email" class="block text-sm font-semibold text-text-primary mb-2">Alamat Email (Username Login) <span class="text-accent-danger">*</span></label>
-                <div class="relative">
-                    <span class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-text-muted/60">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-                            <polyline points="22,6 12,13 2,6"/>
-                        </svg>
-                    </span>
-                    <input type="email" id="email" name="email" value="{{ old('email') }}" required placeholder="petugas.desa@papsampah.id" class="w-full pl-12 pr-4 py-3 bg-base border border-border-default rounded-2xl text-sm text-text-primary placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent-primary/20 focus:border-accent-primary transition-all @error('email') border-accent-danger @enderror">
-                </div>
-                @error('email')
-                    <p class="text-xs text-accent-danger mt-1.5">{{ $message }}</p>
-                @enderror
-            </div>
-
-            {{-- Telepon --}}
-            <div>
-                <label for="phone" class="block text-sm font-semibold text-text-primary mb-2">Nomor Telepon / WhatsApp</label>
-                <div class="relative">
-                    <span class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-text-muted/60">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/>
-                        </svg>
-                    </span>
-                    <input type="text" id="phone" name="phone" value="{{ old('phone') }}" placeholder="08xxxxxxxxxx" class="w-full pl-12 pr-4 py-3 bg-base border border-border-default rounded-2xl text-sm text-text-primary placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent-primary/20 focus:border-accent-primary transition-all @error('phone') border-accent-danger @enderror">
-                </div>
-                @error('phone')
-                    <p class="text-xs text-accent-danger mt-1.5">{{ $message }}</p>
-                @enderror
-            </div>
-
-            {{-- Wilayah Kelurahan --}}
+            {{-- Wilayah Kelurahan Operasional --}}
             <div>
                 <label for="village_id" class="block text-sm font-semibold text-text-primary mb-2">Wilayah Kelurahan Operasional <span class="text-accent-danger">*</span></label>
                 @if(Auth::user()->hasRole('admin_desa'))
                     <div class="px-4 py-3 bg-base border border-border-default rounded-2xl text-sm text-text-primary flex items-center justify-between">
-                        <span class="font-medium">{{ Auth::user()->village?->name }}</span>
+                        <span class="font-medium" id="village_name_display" data-slug="{{ strtolower(Auth::user()->village?->name ?? '') }}">{{ Auth::user()->village?->name }}</span>
                         <span class="text-xs text-text-muted bg-surface px-2.5 py-1 rounded-lg border border-border-default">Sesuai Desa Admin</span>
                     </div>
+                    <input type="hidden" name="village_id" id="village_id" value="{{ Auth::user()->village_id }}">
                 @else
                     <select id="village_id" name="village_id" required class="w-full px-4 py-3 bg-base border border-border-default rounded-2xl text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-primary/20 focus:border-accent-primary transition-all @error('village_id') border-accent-danger @enderror">
                         <option value="">-- Pilih Kelurahan --</option>
                         @foreach($villages as $vil)
-                            <option value="{{ $vil->id }}" {{ old('village_id') == $vil->id ? 'selected' : '' }}>{{ $vil->name }}</option>
+                            <option value="{{ $vil->id }}" data-slug="{{ strtolower($vil->name) }}" {{ old('village_id') == $vil->id ? 'selected' : '' }}>{{ $vil->name }}</option>
                         @endforeach
                     </select>
                     @error('village_id')
@@ -97,6 +63,40 @@
                     @enderror
                 @endif
                 <p class="text-xs text-text-muted mt-1.5">Sesuai aturan arsitektur, petugas kebersihan terikat dan hanya dapat menerima tugas pembersihan pada wilayah kelurahannya.</p>
+            </div>
+
+            {{-- Email --}}
+            <div>
+    <label for="email" class="block text-sm font-semibold text-text-primary mb-2">Alamat Email (Username Login) <span class="text-accent-danger">*</span></label>
+    <div class="relative">
+        <span class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-text-muted/60">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                <polyline points="22,6 12,13 2,6"/>
+            </svg>
+        </span>
+        <input type="email" id="email" name="email" value="{{ old('email') }}" readonly required placeholder="Memuat email otomatis..." class="w-full pl-12 pr-4 py-3 bg-slate-100 border border-border-default rounded-2xl text-sm text-text-primary font-medium focus:outline-none cursor-not-allowed @error('email') border-accent-danger @enderror">
+    </div>
+    <p class="text-xs text-text-muted mt-1.5">Alamat email dibuat otomatis oleh sistem berdasarkan wilayah kelurahan.</p>
+    @error('email')
+        <p class="text-xs text-accent-danger mt-1.5">{{ $message }}</p>
+    @enderror
+</div>
+
+            {{-- Telepon --}}
+            <div>
+                <label for="phone" class="block text-sm font-semibold text-text-primary mb-2">Nomor Telepon / WhatsApp <span class="text-accent-danger">*</span></label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-text-muted/60">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/>
+                        </svg>
+                    </span>
+                    <input type="text" id="phone" name="phone" value="{{ old('phone') }}" required placeholder="08xxxxxxxxxx" class="w-full pl-12 pr-4 py-3 bg-base border border-border-default rounded-2xl text-sm text-text-primary placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent-primary/20 focus:border-accent-primary transition-all @error('phone') border-accent-danger @enderror">
+                </div>
+                @error('phone')
+                    <p class="text-xs text-accent-danger mt-1.5">{{ $message }}</p>
+                @enderror
             </div>
 
             {{-- Password & Konfirmasi --}}
@@ -116,7 +116,7 @@
 
             {{-- Buttons --}}
             <div class="flex items-center justify-end gap-3 pt-6 border-t border-border-default">
-                <a href="{{ route('petugas.index') }}" class="px-5 py-2.5 bg-base hover:bg-border-default/10 border border-border-default text-text-primary font-medium text-sm rounded-xl transition-colors">
+                <a href="{{ route('worker.index') }}" class="px-5 py-2.5 bg-base hover:bg-border-default/10 border border-border-default text-text-primary font-medium text-sm rounded-xl transition-colors">
                     Batal
                 </a>
                 <button type="submit" class="px-6 py-2.5 bg-accent-primary text-white font-medium text-sm rounded-xl hover:-translate-y-0.5 shadow-sm hover:shadow transition-all duration-200">
@@ -127,4 +127,46 @@
     </div>
 
 </div>
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const villageSelect = document.getElementById('village_id');
+    const villageDisplay = document.getElementById('village_name_display');
+    const emailInput = document.getElementById('email');
+
+    function fetchNextEmail(villageId) {
+        if (!villageId) return;
+
+        emailInput.value = '';
+        emailInput.placeholder = 'Mengambil email otomatis...';
+
+        fetch(`/api/get-next-worker-email/${villageId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.email) {
+                    emailInput.value = data.email;
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching email:', error);
+                emailInput.placeholder = 'Gagal memuat email otomatis';
+            });
+    }
+
+    if (villageSelect && villageSelect.tagName === 'SELECT') {
+        villageSelect.addEventListener('change', function () {
+            fetchNextEmail(this.value);
+        });
+
+        if (villageSelect.value) {
+            fetchNextEmail(villageSelect.value);
+        }
+    } else if (villageDisplay) {
+        const villageId = document.getElementById('village_id').value;
+        fetchNextEmail(villageId);
+    }
+});
+</script>
+@endpush
 @endsection

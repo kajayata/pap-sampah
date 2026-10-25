@@ -9,7 +9,7 @@
     <div class="flex items-center gap-2 text-xs font-medium text-text-muted mb-4">
         <a href="{{ route('dashboard') }}" class="hover:text-accent-primary transition-colors">Dashboard</a>
         <span>/</span>
-        <a href="{{ route('petugas.index') }}" class="hover:text-accent-primary transition-colors">Petugas Kebersihan</a>
+        <a href="{{ route('worker.index') }}" class="hover:text-accent-primary transition-colors">Petugas Kebersihan</a>
         <span>/</span>
         <span class="text-text-primary">Edit #{{ $worker->id }}</span>
     </div>
@@ -24,7 +24,7 @@
 
     {{-- Form Card --}}
     <div class="bg-surface rounded-3xl border border-border-default p-6 sm:p-8 shadow-sm">
-        <form method="POST" action="{{ route('petugas.update', $worker->id) }}" class="space-y-6">
+        <form method="POST" action="{{ route('worker.update', $worker->id) }}" class="space-y-6">
             @csrf
             @method('PUT')
 
@@ -149,7 +149,7 @@
 
             {{-- Buttons --}}
             <div class="flex items-center justify-end gap-3 pt-6 border-t border-border-default">
-                <a href="{{ route('petugas.index') }}" class="px-5 py-2.5 bg-base hover:bg-border-default/10 border border-border-default text-text-primary font-medium text-sm rounded-xl transition-colors">
+                <a href="{{ route('worker.index') }}" class="px-5 py-2.5 bg-base hover:bg-border-default/10 border border-border-default text-text-primary font-medium text-sm rounded-xl transition-colors">
                     Batal
                 </a>
                 <button type="submit" class="px-6 py-2.5 bg-accent-primary text-white font-medium text-sm rounded-xl hover:-translate-y-0.5 shadow-sm hover:shadow transition-all duration-200">
