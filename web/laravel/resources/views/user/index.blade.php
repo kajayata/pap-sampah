@@ -41,8 +41,9 @@
             <div class="w-full sm:w-48">
                 <select name="status" onchange="this.form.submit()" class="w-full px-3.5 py-2 bg-base border border-border-default rounded-xl text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-primary/20 focus:border-accent-primary transition-all">
                     <option value="">Semua Status</option>
-                    <option value="active" {{ request('status') == 'active' ? 'selected' : '' }}>Aktif</option>
-                    <option value="inactive" {{ request('status') == 'inactive' ? 'selected' : '' }}>Terkunci / Nonaktif</option>
+                    {{-- Ubah value menjadi '1' dan '0' agar cocok dengan tipe boolean/integer di database --}}
+                    <option value="1" {{ request('status') === '1' ? 'selected' : '' }}>Aktif</option>
+                    <option value="0" {{ request('status') === '0' ? 'selected' : '' }}>Terkunci / Nonaktif</option>
                 </select>
             </div>
 
@@ -80,6 +81,7 @@
                 </p>
             </div>
         @else
+        
             <div class="overflow-x-auto">
                 <table class="min-w-[700px] w-full text-left border-collapse">
                     <thead>

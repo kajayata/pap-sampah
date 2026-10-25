@@ -308,7 +308,7 @@
 
                         {{-- PETUGAS --}}
                         @if(Auth::user()->hasRole('admin_desa') || Auth::user()->hasRole('super_admin_kecamatan'))
-                            <a href="{{ route('petugas.index') }}" aria-current="{{ request()->routeIs('petugas.*') ? 'page' : 'false' }}" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors {{ request()->routeIs('petugas.*') ? 'bg-accent-primary text-text-inverse' : 'text-text-muted hover:bg-base hover:text-text-primary' }}">
+                            <a href="{{ route('worker.index') }}" aria-current="{{ request()->routeIs('worker.*') ? 'page' : 'false' }}" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors {{ request()->routeIs('worker.*') ? 'bg-accent-primary text-text-inverse' : 'text-text-muted hover:bg-base hover:text-text-primary' }}">
                                 <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/>
                                     <circle cx="9" cy="7" r="4"/>

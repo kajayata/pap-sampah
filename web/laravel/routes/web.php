@@ -31,12 +31,34 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/peta', [MapWebController::class, 'index'])->name('map.index');
 
     // CRUD Petugas Kebersihan Desa
-    Route::get('/petugas', [WorkerController::class, 'index'])->name('petugas.index');
-    Route::get('/petugas/create', [WorkerController::class, 'create'])->name('petugas.create');
-    Route::post('/petugas', [WorkerController::class, 'store'])->name('petugas.store');
-    Route::get('/petugas/{id}/edit', [WorkerController::class, 'edit'])->name('petugas.edit');
-    Route::put('/petugas/{id}', [WorkerController::class, 'update'])->name('petugas.update');
-    Route::patch('/petugas/{id}/toggle-status', [WorkerController::class, 'toggleStatus'])->name('petugas.toggle-status');
+    Route::middleware(['auth'])->group(function () {
+        Route::get('/petugas', [WorkerController::class, 'index'])->name('worker.index');
+        Route::get('/petugas/create', [WorkerController::class, 'create'])->name('worker.create');
+        Route::post('/petugas', [WorkerController::class, 'store'])->name('worker.store');
+        Route::get('/petugas/{id}/edit', [WorkerController::class, 'edit'])->name('worker.edit');
+        Route::put('/petugas/{id}', [WorkerController::class, 'update'])->name('worker.update');
+        Route::patch('/petugas/{id}/toggle-status', [WorkerController::class, 'toggleStatus'])->name('worker.toggle-status');
+        Route::delete('/petugas/{id}', [WorkerController::class, 'destroy'])->name('worker.destroy');
+        Route::get('/api/get-next-worker-email/{village_id}', function ($village_id) {
+        $petugasRole = \App\Models\Role::where('name', 'petugas_desa')->firstOrFail();
+        $village = \App\Models\Village::findOrFail($village_id);
+        $slugVillage = strtolower(str_replace(' ', '', $village->name));
+
+        $countInVillage = \App\Models\User::where('village_id', $village_id)
+            ->where('role_id', $petugasRole->id)
+            ->count();
+
+        $nextNumber = $countInVillage + 1;
+        $generatedEmail = "petugas{$nextNumber}.{$slugVillage}@papsampah.id";
+
+        while (\App\Models\User::where('email', $generatedEmail)->exists()) {
+            $nextNumber++;
+            $generatedEmail = "petugas{$nextNumber}.{$slugVillage}@papsampah.id";
+        }
+
+        return response()->json(['email' => $generatedEmail]);
+    })->name('api.get-next-worker-email');
+    });
 
     // Kelola akun admin kelurahan
     Route::get('/akun-kelurahan', [VillageAdminController::class, 'index'])->name('village-admins.index');

@@ -15,6 +15,9 @@ class UserController extends Controller
     /**
      * Tampilkan daftar user (masyarakat/warga saja).
      */
+    /**
+     * Tampilkan daftar user (masyarakat/warga saja).
+     */
     public function index(Request $request)
     {
         $this->authorizeSuperAdmin();
@@ -33,7 +36,7 @@ class UserController extends Controller
             });
         }
 
-        // Fitur Pencarian (Search Filter)
+        // Fitur Pencarian (Menggunakan 'ilike' khusus PostgreSQL agar tidak case-sensitive)
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
@@ -43,11 +46,15 @@ class UserController extends Controller
             });
         }
 
+        // Filter Status Akun (Aktif / Nonaktif)
+        if ($request->filled('status')) {
+            $query->where('is_active', $request->status);
+        }
+
         $users = $query->latest('id')->paginate(10)->withQueryString();
 
         return view('user.index', compact('users'));
     }
-
     /**
      * Ubah status aktif/nonaktif akun user.
      */
