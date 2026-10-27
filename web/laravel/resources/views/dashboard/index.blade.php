@@ -331,7 +331,7 @@
                 <div class="bg-surface rounded-2xl border border-border-default p-5">
                     <h3 class="font-display text-lg font-bold text-text-primary mb-4">Aksi Cepat</h3>
                     <div class="space-y-2">
-                        <a href="{{ route('petugas.index') }}" class="flex items-center gap-3 p-3 rounded-xl hover:bg-accent-primary/5 border border-transparent hover:border-accent-primary/15 transition-all duration-200 group">
+                        <a href="{{ route('worker.index') }}" class="flex items-center gap-3 p-3 rounded-xl hover:bg-accent-primary/5 border border-transparent hover:border-accent-primary/15 transition-all duration-200 group">
                             <span class="w-9 h-9 bg-accent-primary/10 rounded-xl flex items-center justify-center group-hover:bg-accent-primary/20 transition-colors">
                                 <svg class="w-5 h-5 text-accent-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>

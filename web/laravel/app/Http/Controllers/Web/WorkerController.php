@@ -83,92 +83,86 @@ class WorkerController extends Controller
      * Simpan petugas kebersihan baru dengan Auto-Increment Email yang aman.
      */
     public function store(Request $request)
-    {
-        $user = Auth::user();
-        $this->authorizeAdmin($user);
+{
+    $user = Auth::user();
+    $this->authorizeAdmin($user);
 
-        $petugasRole = Role::where('name', 'petugas_desa')->firstOrFail();
+    $petugasRole = Role::where('name', 'petugas_desa')->firstOrFail();
 
-        $villageId = $user->hasRole('admin_desa')
-            ? $user->village_id
-            : $request->village_id;
+    $villageId = $user->hasRole('admin_desa')
+        ? $user->village_id
+        : $request->village_id;
 
-        $village = Village::findOrFail($villageId);
-        $slugVillage = strtolower(str_replace(' ', '', $village->name));
+    $village = Village::findOrFail($villageId);
+    $slugVillage = strtolower(str_replace(' ', '', $village->name));
 
-        // Auto-increment nomor email berdasarkan jumlah petugas di kelurahan tersebut
-        $countInVillage = User::where('village_id', $villageId)
-            ->where('role_id', $petugasRole->id)
-            ->count();
-        
-        $nextNumber = $countInVillage + 1;
-        $generatedEmail = "petugas{$nextNumber}.{$slugVillage}@papsampah.id";
+    // Jika email kosong dari form, generate otomatis dengan kombinasi nama + wilayah + random angka
+    if (!$request->filled('email')) {
+        $nameParts = explode(' ', strtolower(trim($request->name)));
+        $firstName = preg_replace('/[^a-z]/', '', $nameParts[0] ?? 'petugas');
+        if (empty($firstName)) $firstName = 'petugas';
 
-        // Pastikan nomor increment aman dari bentrok/duplikat
-        while (User::where('email', $generatedEmail)->exists()) {
-            $nextNumber++;
-            $generatedEmail = "petugas{$nextNumber}.{$slugVillage}@papsampah.id";
-        }
+        do {
+            $randomNumber = rand(10, 99);
+            $generatedEmail = "{$firstName}.{$slugVillage}{$randomNumber}@papsampah.id";
+        } while (User::where('email', $generatedEmail)->exists());
 
-        if (!$request->filled('email') || $request->email === "petugas.{$slugVillage}@papsampah.id") {
-            $request->merge(['email' => $generatedEmail]);
-        }
-
-        $validated = $request->validate([
-            'name' => [
-                'required',
-                'string',
-                'max:255',
-                'regex:/^[a-zA-Z\s]+$/'
-            ],
-            'email' => [
-                'required',
-                'string',
-                'email',
-                'max:255',
-                'ends_with:@papsampah.id',
-                'unique:users,email'
-            ],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
-            'phone' => [
-                'required',
-                'string',
-                'numeric',
-                'digits_between:10,15',
-                'regex:/^08[0-9]+$/',
-                'unique:users,phone'
-            ],
-            'village_id' => $user->hasRole('super_admin_kecamatan')
-                ? ['required', 'exists:villages,id']
-                : ['nullable'],
-        ], [
-            'name.regex' => 'Nama petugas tidak boleh diawali dengan angka maupun simbol.',
-            'email.unique' => 'Email ini sudah terdaftar dalam sistem.',
-            'email.ends_with' => 'Email harus diakhiri dengan @papsampah.id.',
-            'phone.required' => 'Nomor telepon wajib diisi.',
-            'phone.numeric' => 'Nomor telepon harus berupa angka.',
-            'phone.digits_between' => 'Nomor telepon harus berisi antara 10 hingga 15 digit.',
-            'phone.regex' => 'Nomor telepon harus diawali dengan 08.',
-            'phone.unique' => 'Nomor telepon ini sudah terdaftar dalam sistem.',
-            'password.min' => 'Kata sandi minimal 8 karakter.',
-            'password.confirmed' => 'Konfirmasi kata sandi tidak cocok.',
-        ]);
-
-        User::create([
-            'role_id' => $petugasRole->id,
-            'village_id' => $villageId,
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
-            'phone' => $validated['phone'],
-            'is_active' => true,
-        ]);
-
-        // Route diarahkan ke worker.index
-        return redirect()->route('worker.index')
-            ->with('success', "Petugas kebersihan '{$validated['name']}' berhasil ditambahkan.");
+        $request->merge(['email' => $generatedEmail]);
     }
 
+    $validated = $request->validate([
+        'name' => [
+            'required',
+            'string',
+            'max:255',
+            'regex:/^[a-zA-Z\s]+$/'
+        ],
+        'email' => [
+            'required',
+            'string',
+            'email',
+            'max:255',
+            'ends_with:@papsampah.id',
+            'unique:users,email'
+        ],
+        'password' => ['required', 'string', 'min:8', 'confirmed'],
+        'phone' => [
+            'required',
+            'string',
+            'numeric',
+            'digits_between:10,15',
+            'regex:/^08[0-9]+$/',
+            'unique:users,phone'
+        ],
+        'village_id' => $user->hasRole('super_admin_kecamatan')
+            ? ['required', 'exists:villages,id']
+            : ['nullable'],
+    ], [
+        'name.regex' => 'Nama petugas tidak boleh diawali dengan angka maupun simbol.',
+        'email.unique' => 'Email ini sudah terdaftar dalam sistem.',
+        'email.ends_with' => 'Email harus diakhiri dengan @papsampah.id.',
+        'phone.required' => 'Nomor telepon wajib diisi.',
+        'phone.numeric' => 'Nomor telepon harus berupa angka.',
+        'phone.digits_between' => 'Nomor telepon harus berisi antara 10 hingga 15 digit.',
+        'phone.regex' => 'Nomor telepon harus diawali dengan 08.',
+        'phone.unique' => 'Nomor telepon ini sudah terdaftar dalam sistem.',
+        'password.min' => 'Kata sandi minimal 8 karakter.',
+        'password.confirmed' => 'Konfirmasi kata sandi tidak cocok.',
+    ]);
+
+    User::create([
+        'role_id' => $petugasRole->id,
+        'village_id' => $villageId,
+        'name' => $validated['name'],
+        'email' => $validated['email'],
+        'password' => Hash::make($validated['password']),
+        'phone' => $validated['phone'],
+        'is_active' => true,
+    ]);
+
+    return redirect()->route('worker.index')
+        ->with('success', "Petugas kebersihan '{$validated['name']}' berhasil ditambahkan.");
+}
     /**
      * Form edit data petugas kebersihan.
      */
