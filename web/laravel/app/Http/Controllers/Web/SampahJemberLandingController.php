@@ -107,10 +107,10 @@ class SampahJemberLandingController extends Controller
         $guideSteps = [
             ['number' => '01', 'icon' => '📱', 'title' => 'Unduh Aplikasi', 'description' => 'Unduh aplikasi SampahJember secara gratis melalui Google Play Store atau App Store.'],
             ['number' => '02', 'icon' => '👤', 'title' => 'Daftar & Masuk', 'description' => 'Buat akun masyarakat melalui aplikasi mobile, lalu masuk untuk mulai melapor.'],
-            ['number' => '03', 'icon' => '📍', 'title' => 'Ambil Lokasi', 'description' => 'Aktifkan GPS dan pastikan lokasi laporan berada di wilayah Kecamatan Sumbersari.'],
-            ['number' => '04', 'icon' => '📸', 'title' => 'Kirim Laporan', 'description' => 'Tambahkan foto, kategori, dan deskripsi kondisi sampah sebagai bukti laporan.'],
-            ['number' => '05', 'icon' => '🧹', 'title' => 'Pantau Penanganan', 'description' => 'Admin Desa memvalidasi laporan dan menugaskan petugas sesuai kelurahan operasionalnya.'],
-            ['number' => '06', 'icon' => '✅', 'title' => 'Lihat Hasil', 'description' => 'Pantau status laporan dan foto hasil pembersihan setelah diverifikasi Admin Desa.'],
+            ['number' => '03', 'icon' => '📍', 'title' => 'Ambil Lokasi', 'description' => 'Aktifkan GPS dan kirim laporan untuk lokasi di wilayah ' . $district->name . '. Sistem menentukan kelurahan berdasarkan koordinat.'],
+            ['number' => '04', 'icon' => '📸', 'title' => 'Kirim Laporan', 'description' => 'Pilih kategori, sertakan foto kondisi sampah, lalu tambahkan deskripsi agar Admin Desa dapat memvalidasi laporan.'],
+            ['number' => '05', 'icon' => '🧹', 'title' => 'Pantau Penanganan', 'description' => 'Admin Desa memvalidasi laporan yang masuk. Jika valid, satu pekerjaan pembersihan ditugaskan kepada satu atau beberapa petugas di desa tersebut. Petugas dapat menerima atau menolak tugas.'],
+            ['number' => '06', 'icon' => '✅', 'title' => 'Lihat Hasil', 'description' => 'Petugas yang menerima tugas membersihkan lokasi lalu mengirim foto hasil. Admin Desa memverifikasi bukti; setelah valid, laporan berstatus selesai.'],
         ];
 
         return view('public_landing.index', compact(

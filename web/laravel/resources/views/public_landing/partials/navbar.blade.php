@@ -4,7 +4,9 @@
             <!-- Brand Logo -->
             <a href="{{ route('public.home') }}" class="flex items-center gap-3 group">
                 <div class="w-10 h-10 rounded-xl bg-[#ffd65a] text-[#263e1c] flex items-center justify-center font-black text-lg shadow-sm group-hover:scale-105 transition-transform" style="background-color: #ffd65a; color: #263e1c;">
-                    PS
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                    </svg>
                 </div>
                 <div class="flex flex-col">
                     <span class="text-xl font-bold tracking-tight text-white leading-tight">

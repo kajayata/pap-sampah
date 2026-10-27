@@ -21,7 +21,7 @@ return new class extends Migration
         });
 
         // Seed nilai default H+7 sesuai project-overview.md.
-        \DB::table('app_settings')->insert([
+        DB::table('app_settings')->insert([
             'key' => 'marker_display_days',
             'value' => '7',
             'description' => 'Jumlah hari mark selesai tetap tampil di peta setelah resolved_at',

@@ -72,27 +72,38 @@ class WasteBankController extends Controller
     {
         $request->validate([
             'village_id' => ['required', 'integer', 'exists:villages,id'],
-            'name' => ['required', 'string', 'max:150'],
-            'address' => ['required', 'string', 'max:255', 'regex:/^[\pL\pN\s().,\/]+$/u'],
-                'phone' => ['required', 'string', 'regex:/^[0-9]{1,13}$/', 'unique:waste_banks,phone'],
+            'name' => ['required', 'string', 'max:150', 'unique:waste_banks,name'],
+            'address' => ['required', 'string', 'max:255', 'regex:/^[\pL\pN\s().,\/]+$/u', 'unique:waste_banks,address'],
+            'phone' => ['required', 'string', 'regex:/^[0-9]{1,13}$/', 'unique:waste_banks,phone'],
             'description' => ['nullable', 'string', 'max:1000'],
             'latitude' => ['required', 'numeric', 'between:-90,90'],
             'longitude' => ['required', 'numeric', 'between:-180,180'],
             'is_active' => ['boolean'],
         ], [
+            'village_id.required' => 'Kelurahan wajib dipilih.',
+            'village_id.exists' => 'Kelurahan yang dipilih tidak valid.',
+
+            'name.required' => 'Nama Bank Sampah wajib diisi.',
+            'name.max' => 'Nama Bank Sampah maksimal 150 karakter.',
+            'name.unique' => 'Nama Bank Sampah ini sudah terdaftar, gunakan nama yang lain.',
+
+            'address.required' => 'Alamat wajib diisi.',
+            'address.max' => 'Alamat maksimal 255 karakter.',
+            'address.regex' => 'Format alamat mengandung karakter yang tidak diizinkan.',
+            'address.unique' => 'Alamat ini sudah terdaftar oleh Bank Sampah lain.',
+
             'phone.required' => 'Nomor telepon wajib diisi.',
-            'phone.regex' => 'Nomor telepon harus terdiri dari 1 hingga 13 angka.',
-            'phone.unique' => 'Nomor telepon sudah digunakan oleh Bank Sampah lain.',
+            'phone.regex' => 'Nomor telepon harus berupa angka dan terdiri dari 1 hingga 13 digit.',
+            'phone.unique' => 'Nomor telepon ini sudah digunakan oleh Bank Sampah lain.',
+
+            'latitude.required' => 'Titik koordinat latitude wajib diisi.',
+            'latitude.numeric' => 'Latitude harus berupa angka.',
+            'latitude.between' => 'Nilai latitude harus berada di antara -90 dan 90.',
+
+            'longitude.required' => 'Titik koordinat longitude wajib diisi.',
+            'longitude.numeric' => 'Longitude harus berupa angka.',
+            'longitude.between' => 'Nilai longitude harus berada di antara -180 dan 180.',
         ]);
-
-        $duplicate = WasteBank::where('village_id', $request->input('village_id'))
-            ->whereRaw('LOWER(TRIM(name)) = LOWER(TRIM(?))', [$request->input('name')])
-            ->whereRaw('LOWER(TRIM(address)) = LOWER(TRIM(?))', [$request->input('address')])
-            ->exists();
-
-        if ($duplicate) {
-            return back()->withInput()->with('error', 'Data sudah ada sebelumnya');
-        }
 
         $lat = (float) $request->input('latitude');
         $lng = (float) $request->input('longitude');
@@ -145,24 +156,37 @@ class WasteBankController extends Controller
 
         $request->validate([
             'village_id' => ['required', 'integer', 'exists:villages,id'],
-            'name' => ['required', 'string', 'max:150'],
-            'address' => ['required', 'string', 'max:255', 'regex:/^[\pL\pN\s().,\/]+$/u'],
-            'phone' => ['nullable', 'string', 'regex:/^[0-9]{1,13}$/'],
+            'name' => ['required', 'string', 'max:150', 'unique:waste_banks,name,' . $id],
+            'address' => ['required', 'string', 'max:255', 'regex:/^[\pL\pN\s().,\/]+$/u', 'unique:waste_banks,address,' . $id],
+            'phone' => ['nullable', 'string', 'regex:/^[0-9]{1,13}$/', 'unique:waste_banks,phone,' . $id],
             'description' => ['nullable', 'string', 'max:1000'],
             'latitude' => ['required', 'numeric', 'between:-90,90'],
             'longitude' => ['required', 'numeric', 'between:-180,180'],
             'is_active' => ['boolean'],
+        ], [
+            'village_id.required' => 'Kelurahan wajib dipilih.',
+            'village_id.exists' => 'Kelurahan yang dipilih tidak valid.',
+
+            'name.required' => 'Nama Bank Sampah wajib diisi.',
+            'name.max' => 'Nama Bank Sampah maksimal 150 karakter.',
+            'name.unique' => 'Nama Bank Sampah ini sudah terdaftar, gunakan nama yang lain.',
+
+            'address.required' => 'Alamat wajib diisi.',
+            'address.max' => 'Alamat maksimal 255 karakter.',
+            'address.regex' => 'Format alamat mengandung karakter yang tidak diizinkan.',
+            'address.unique' => 'Alamat ini sudah terdaftar oleh Bank Sampah lain.',
+
+            'phone.regex' => 'Nomor telepon harus berupa angka dan terdiri dari 1 hingga 13 digit.',
+            'phone.unique' => 'Nomor telepon ini sudah digunakan oleh Bank Sampah lain.',
+
+            'latitude.required' => 'Titik koordinat latitude wajib diisi.',
+            'latitude.numeric' => 'Latitude harus berupa angka.',
+            'latitude.between' => 'Nilai latitude harus berada di antara -90 dan 90.',
+
+            'longitude.required' => 'Titik koordinat longitude wajib diisi.',
+            'longitude.numeric' => 'Longitude harus berupa angka.',
+            'longitude.between' => 'Nilai longitude harus berada di antara -180 dan 180.',
         ]);
-
-        $duplicate = WasteBank::where('village_id', $request->input('village_id'))
-            ->where('id', '!=', $id)
-            ->whereRaw('LOWER(TRIM(name)) = LOWER(TRIM(?))', [$request->input('name')])
-            ->whereRaw('LOWER(TRIM(address)) = LOWER(TRIM(?))', [$request->input('address')])
-            ->exists();
-
-        if ($duplicate) {
-            return back()->withInput()->with('error', 'Data sudah ada sebelumnya');
-        }
 
         $lat = (float) $request->input('latitude');
         $lng = (float) $request->input('longitude');
@@ -211,4 +235,3 @@ class WasteBankController extends Controller
         return redirect()->back()->with('success', "Bank Sampah {$wasteBank->name} berhasil {$status}.");
     }
 }
-

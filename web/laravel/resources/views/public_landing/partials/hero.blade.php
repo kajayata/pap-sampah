@@ -25,7 +25,7 @@
 
                 <!-- Subtitle -->
                 <p class="text-base sm:text-lg text-emerald-100/90 max-w-xl font-normal leading-relaxed">
-                    Platform pemantauan dan pelaporan pembuangan sampah liar di {{ $district->name }}. Laporkan, pantau, dan bersihkan bersama.
+                    Pantau laporan sampah liar di {{ $district->name }}. Warga mengirim laporan melalui aplikasi, Admin Desa mengatur penanganan, dan hasil pembersihan diverifikasi sebelum dinyatakan selesai.
                 </p>
 
                 <!-- Action Buttons -->
@@ -57,8 +57,10 @@
                         </span>
                         <span class="text-xs text-emerald-200/80 font-medium">Total Laporan</span>
                     </div>
-                    <span class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-lg">
-                        📋
+                    <span class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center overflow-hidden p-2">
+                        <svg class="w-5 h-5 text-[#ffffff]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
+                        </svg>
                     </span>
                 </div>
 
@@ -66,16 +68,18 @@
                 <div class="p-4 rounded-2xl bg-white/10 border border-white/15 backdrop-blur-md shadow-lg flex items-center justify-between">
                     <div>
                         <span class="block text-2xl sm:text-3xl font-black text-[#ffd65a] font-fraunces leading-tight" style="font-family: 'Fraunces', Georgia, serif;">
-                            {{ $stats['persentase_selesai'] ?? '89%' }}
+                        {{ $stats['persentase_selesai'] ?? '89%' }}
                         </span>
-                        <span class="text-xs text-emerald-200/80 font-medium">Terselesaikan</span>
-                    </div>
-                    <span class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-lg">
-                        ✅
-                    </span>
+                    <span class="text-xs text-emerald-200/80 font-medium">Terselesaikan</span>
+                </div>
+                <span class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-white">
+                    <svg class="w-5 h-5 text-[#ffd65a]" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                    </svg>
+                </span>
                 </div>
 
-                <!-- Card 3: Kecamatan Dipantau -->
+                <!-- Card 3: Kelurahan Dipantau -->
                 <div class="p-4 rounded-2xl bg-white/10 border border-white/15 backdrop-blur-md shadow-lg flex items-center justify-between">
                     <div>
                         <span class="block text-2xl sm:text-3xl font-black text-white font-fraunces leading-tight" style="font-family: 'Fraunces', Georgia, serif;">
@@ -83,8 +87,10 @@
                         </span>
                         <span class="text-xs text-emerald-200/80 font-medium">Kelurahan Dipantau</span>
                     </div>
-                    <span class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-lg">
-                        🗺️
+                    <span class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center overflow-hidden p-2">
+                        <svg class="w-4 h-4 text-[#ffffff]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
+                        </svg>
                     </span>
                 </div>
             </div>
