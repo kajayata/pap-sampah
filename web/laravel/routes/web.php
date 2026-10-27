@@ -11,6 +11,7 @@ use App\Http\Controllers\Web\VillageAdminController;
 use App\Http\Controllers\Web\SampahJemberLandingController;
 use App\Http\Controllers\Web\UserController;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Http\Request;
 
 Route::get('/', [SampahJemberLandingController::class, 'index'])->name('public.home');
 Route::get('/home', [SampahJemberLandingController::class, 'index'])->name('home');
@@ -23,42 +24,57 @@ Route::middleware('guest')->group(function () {
 
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
 
-// Dashboard, Petugas, Laporan, & Master Data (authenticated only)
+// Dashboard, Worker, Laporan, & Master Data (authenticated only)
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [AuthController::class, 'dashboard'])->name('dashboard');
 
     // Peta Sebaran & Heatmap Spasial
     Route::get('/peta', [MapWebController::class, 'index'])->name('map.index');
 
-    // CRUD Petugas Kebersihan Desa
-    Route::middleware(['auth'])->group(function () {
-        Route::get('/petugas', [WorkerController::class, 'index'])->name('worker.index');
-        Route::get('/petugas/create', [WorkerController::class, 'create'])->name('worker.create');
-        Route::post('/petugas', [WorkerController::class, 'store'])->name('worker.store');
-        Route::get('/petugas/{id}/edit', [WorkerController::class, 'edit'])->name('worker.edit');
-        Route::put('/petugas/{id}', [WorkerController::class, 'update'])->name('worker.update');
-        Route::patch('/petugas/{id}/toggle-status', [WorkerController::class, 'toggleStatus'])->name('worker.toggle-status');
-        Route::delete('/petugas/{id}', [WorkerController::class, 'destroy'])->name('worker.destroy');
-        Route::get('/api/get-next-worker-email/{village_id}', function ($village_id) {
-        $petugasRole = \App\Models\Role::where('name', 'petugas_desa')->firstOrFail();
-        $village = \App\Models\Village::findOrFail($village_id);
+    // CRUD Petugas Kebersihan Desa (Worker)
+    Route::get('/petugas', [WorkerController::class, 'index'])->name('worker.index');
+    Route::get('/petugas/create', [WorkerController::class, 'create'])->name('worker.create');
+    Route::post('/petugas', [WorkerController::class, 'store'])->name('worker.store');
+    Route::get('/petugas/{id}/edit', [WorkerController::class, 'edit'])->name('worker.edit');
+    Route::put('/petugas/{id}', [WorkerController::class, 'update'])->name('worker.update');
+    Route::patch('/petugas/{id}/toggle-status', [WorkerController::class, 'toggleStatus'])->name('worker.toggle-status');
+    Route::delete('/worker/{id}', [WorkerController::class, 'destroy'])->name('worker.destroy');
+
+    // API Endpoint untuk Auto-Generate Email 
+    Route::get('/api/get-next-worker-email', function (Request $request) {
+        $villageId = $request->query('village_id');
+        $name = $request->query('name', 'petugas');
+
+        if (!$villageId) {
+            return response()->json(['email' => '']);
+        }
+
+        $village = \App\Models\Village::findOrFail($villageId);
         $slugVillage = strtolower(str_replace(' ', '', $village->name));
 
-        $countInVillage = \App\Models\User::where('village_id', $village_id)
-            ->where('role_id', $petugasRole->id)
-            ->count();
+        // Bersihkan nama dan pecah per kata
+        $cleanName = preg_replace('/[^a-zA-Z\s]/', '', strtolower(trim($name)));
+        $nameParts = array_values(array_filter(explode(' ', $cleanName)));
 
-        $nextNumber = $countInVillage + 1;
-        $generatedEmail = "petugas{$nextNumber}.{$slugVillage}@papsampah.id";
-
-        while (\App\Models\User::where('email', $generatedEmail)->exists()) {
-            $nextNumber++;
-            $generatedEmail = "petugas{$nextNumber}.{$slugVillage}@papsampah.id";
+        if (count($nameParts) >= 2) {
+            // 3 huruf nama depan + 3 huruf nama belakang (contoh: budi santoso -> budsan)
+            $firstNamePart = substr($nameParts[0], 0, 3);
+            $lastNamePart  = substr(end($nameParts), 0, 3);
+            $namePrefix    = $firstNamePart . $lastNamePart;
+        } elseif (count($nameParts) === 1) {
+            // Jika hanya 1 kata (contoh: budi -> budi)
+            $namePrefix = $nameParts[0];
+        } else {
+            $namePrefix = 'petugas';
         }
+
+        do {
+            $randomNumber = rand(100, 999);
+            $generatedEmail = "{$namePrefix}.{$slugVillage}{$randomNumber}@papsampah.id";
+        } while (\App\Models\User::where('email', $generatedEmail)->exists());
 
         return response()->json(['email' => $generatedEmail]);
     })->name('api.get-next-worker-email');
-    });
 
     // Kelola akun admin kelurahan
     Route::get('/akun-kelurahan', [VillageAdminController::class, 'index'])->name('village-admins.index');
