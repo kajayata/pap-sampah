@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Edit Data Warga — Pap Sampah')
+@section('title', 'Edit Pengguna — Pap Sampah')
 
 @section('content')
 <div class="max-w-3xl mx-auto px-6 py-8">
@@ -12,10 +12,10 @@
                 <line x1="19" y1="12" x2="5" y2="12"/>
                 <polyline points="12 19 5 12 12 5"/>
             </svg>
-            <span>Kembali ke Data Masyarakat</span>
+            <span>Kembali ke Daftar Pengguna</span>
         </a>
-        <h1 class="font-display text-3xl font-bold text-text-primary">Edit Data Warga</h1>
-        <p class="text-text-muted text-sm mt-1">Perbarui informasi akun masyarakat untuk <strong>{{ $user->name }}</strong></p>
+        <h1 class="font-display text-3xl font-bold text-text-primary">Edit Data Pengguna</h1>
+        <p class="text-text-muted text-sm mt-1">Perbarui informasi akun untuk {{ $user->name }}</p>
     </div>
 
     {{-- Form Card --}}
@@ -51,19 +51,39 @@
                 @enderror
             </div>
 
-            {{-- Status Akun (Aktif / Terkunci) --}}
-            <div>
+            <div class="mb-3">
                 <label for="is_active" class="block text-sm font-medium text-text-primary mb-2">Status Akun</label>
                 <select name="is_active" id="is_active" class="w-full px-4 py-2.5 bg-base border border-border-default rounded-xl text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-primary/20 focus:border-accent-primary transition-all">
-                    <option value="1" {{ old('is_active', $user->is_active ?? true) ? 'selected' : '' }}>Aktif</option>
-                    <option value="0" {{ !old('is_active', $user->is_active ?? true) ? 'selected' : '' }}>Terkunci / Nonaktif</option>
+                    <option value="1" {{ old('is_active', $user->is_active) == 1 ? 'selected' : '' }}>Aktif</option>
+                    <option value="0" {{ old('is_active', $user->is_active) == 0 ? 'selected' : '' }}>Tidak Aktif</option>
                 </select>
+                @error('is_active')
+                    <p class="text-xs text-accent-danger mt-1.5">{{ $message }}</p>
+                @enderror
             </div>
+
+            {{-- Wilayah Kelurahan --}}
+            @if(isset($villages))
+            <div>
+                <label for="village_id" class="block text-sm font-medium text-text-primary mb-2">Wilayah Kelurahan</label>
+                <select name="village_id" id="village_id" class="w-full px-4 py-2.5 bg-base border @error('village_id') border-accent-danger @else border-border-default @enderror rounded-xl text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-primary/20 focus:border-accent-primary transition-all">
+                    <option value="">-- Pilih Kelurahan --</option>
+                    @foreach($villages as $village)
+                        <option value="{{ $village->id }}" {{ old('village_id', $user->village_id) == $village->id ? 'selected' : '' }}>
+                            {{ $village->name }}
+                        </option>
+                    @endforeach
+                </select>
+                @error('village_id')
+                    <p class="text-xs text-accent-danger mt-1.5">{{ $message }}</p>
+                @enderror
+            </div>
+            @endif
 
             {{-- Password Baru (Opsional) --}}
             <div class="pt-4 border-t border-border-default">
                 <h3 class="text-sm font-semibold text-text-primary mb-1">Ubah Password</h3>
-                <p class="text-xs text-text-muted mb-4">Kosongkan jika tidak ingin mengubah password akun ini.</p>
+                <p class="text-xs text-text-muted mb-4">Kosongkan jika tidak ingin mengubah password.</p>
 
                 <div class="space-y-4">
                     <div>
