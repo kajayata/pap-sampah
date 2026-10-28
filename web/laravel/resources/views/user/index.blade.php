@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Daftar Masyarakat — Pap Sampah')
+@section('title', 'Daftar Masyarakat Pap Sampah')
 
 @section('content')
 <div class="max-w-7xl mx-auto px-6 py-8">
@@ -81,7 +81,7 @@
                 </p>
             </div>
         @else
-        
+
             <div class="overflow-x-auto">
                 <table class="min-w-[700px] w-full text-left border-collapse">
                     <thead>
@@ -132,7 +132,7 @@
                             {{-- Aksi --}}
                             <td class="py-4 px-6 text-right">
                                 <div class="flex items-center justify-end gap-2">
-                                    
+
                                     {{-- Tombol Toggle Lock / Unlock Status --}}
                                     <form method="POST" action="{{ route('user.toggle-status', $user->id) }}">
                                         @csrf
