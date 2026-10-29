@@ -24,6 +24,11 @@ Route::prefix('auth')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
 });
 
+// routes/api.php
+Route::post('/forgot-password', [PasswordResetController::class, 'sendCode'])
+    ->middleware('throttle:5,1');
+Route::post('/reset-password', [PasswordResetController::class, 'reset'])
+    ->middleware('throttle:10,1');
 /*
 |--------------------------------------------------------------------------
 | Public Master Data & Spatial API (Mobile App & Web)
