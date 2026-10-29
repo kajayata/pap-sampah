@@ -6,410 +6,529 @@
 <div class="max-w-7xl mx-auto px-4 py-6">
     <div class="max-w-2xl mx-auto">
 
-        {{-- Header --}}
         <div class="mb-8">
-            <h1 class="text-2xl font-bold text-text-primary">
+            <h1 class="text-2xl font-bold font-serif text-slate-900">
                 Tambah Akun Admin Kelurahan
             </h1>
-
-            <p class="text-sm text-text-muted mt-1">
-                Tambahkan akun pengelola kelurahan. Setiap kelurahan
-                dapat memiliki maksimal 3 akun admin.
+            <p class="text-sm text-slate-500 mt-1">
+                Tambahkan akun administrator untuk kelurahan.
             </p>
         </div>
 
-        {{-- Pesan error umum --}}
         @if($errors->has('form'))
-            <div class="mb-5 rounded-xl bg-red-100 px-4 py-3 text-red-800">
+            <div
+                class="mb-5 p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-sm"
+                role="alert"
+            >
                 {{ $errors->first('form') }}
             </div>
         @endif
 
-        {{-- Daftar error validasi --}}
-        @if($errors->any() && !$errors->has('form'))
-            <div class="mb-5 rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-red-800">
-                <p class="font-semibold mb-1">
-                    Periksa kembali data yang dimasukkan.
-                </p>
-                <p class="text-sm">
-                    Beberapa data belum valid. Lihat pesan di bawah kolom terkait.
-                </p>
-            </div>
-        @endif
+        <div class="mb-5 p-4 rounded-xl bg-blue-50 border border-blue-200 text-blue-800 text-sm">
+            Setiap kelurahan maksimal memiliki 3 akun admin, termasuk akun nonaktif.
+            Email akun dibuat otomatis berdasarkan kelurahan dan urutan akun.
+        </div>
 
         @php
-            $hasAvailableVillage = false;
-
-            foreach ($villages as $village) {
-                if (($accountCounts[$village->id] ?? 0) < 3) {
-                    $hasAvailableVillage = true;
-                    break;
-                }
-            }
+            $hasAvailableVillage = $villages->contains(
+                fn ($village) => ($accountCounts[$village->id] ?? 0) < 3
+            );
         @endphp
 
-        {{-- Peringatan kapasitas --}}
         @if(!$hasAvailableVillage)
-            <div class="mb-5 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-amber-800">
-                <p class="font-semibold">
-                    Semua kelurahan sudah mencapai batas akun.
-                </p>
-                <p class="text-sm mt-1">
-                    Setiap kelurahan maksimal memiliki 3 akun admin.
-                    Nonaktifkan akun tidak akan mengurangi hitungan akun.
-                </p>
+            <div
+                class="mb-5 p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-sm"
+                role="alert"
+            >
+                Semua kelurahan aktif sudah memiliki maksimal 3 akun admin
+                atau belum tersedia kelurahan aktif.
             </div>
         @endif
 
         <form
+            id="createVillageAdminForm"
             action="{{ route('village-admins.store') }}"
             method="POST"
-            class="space-y-5"
+            novalidate
+            class="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-xs space-y-6"
         >
             @csrf
 
-            {{-- KELURAHAN --}}
-            <div>
-                <label
-                    for="village_id"
-                    class="block mb-2 font-medium"
-                >
-                    Kelurahan <span class="text-red-600">*</span>
-                </label>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5 text-xs">
 
-                <select
-                    id="village_id"
-                    name="village_id"
-                    required
-                    class="w-full rounded-xl border border-border px-4 py-3"
-                >
-                    <option value="">-- Pilih Kelurahan --</option>
+                {{-- DROPDOWN KELURAHAN --}}
+                <div class="md:col-span-2">
+                    <label
+                        for="village_id"
+                        class="block font-semibold text-slate-700 mb-1"
+                    >
+                        Kelurahan <span class="text-rose-500">*</span>
+                    </label>
 
-                    @foreach($villages as $village)
-                        @php
-                            $count = $accountCounts[$village->id] ?? 0;
-                            $isFull = $count >= 3;
-                        @endphp
-
+                    <select
+                        id="village_id"
+                        name="village_id"
+                        required
+                        aria-describedby="village-help error-village_id"
+                        class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs bg-white text-slate-800 focus:ring-2 focus:ring-emerald-700 focus:outline-none"
+                    >
                         <option
-                            value="{{ $village->id }}"
-                            data-village-name="{{ $village->name }}"
-                            data-account-count="{{ $count }}"
-                            data-email-preview="{{ $emailPreviews[$village->id] ?? '' }}"
-                            {{ old('village_id') == $village->id && !$isFull ? 'selected' : '' }}
-                            {{ $isFull ? 'disabled' : '' }}
+                            value=""
+                            data-account-count="0"
+                            data-email-preview=""
+                            {{ old('village_id') ? '' : 'selected' }}
                         >
-                            {{ $village->name }}
-                            ({{ $count }}/3 akun{{ $isFull ? ' - Maksimum' : '' }})
+                            Pilih Kelurahan
                         </option>
-                    @endforeach
-                </select>
 
-                <p class="mt-1 text-xs text-text-muted">
-                    Kelurahan dengan 3 akun sudah penuh dan tidak dapat dipilih.
-                </p>
+                        @foreach($villages as $village)
+                            @php
+                                $jumlahAkun = $accountCounts[$village->id] ?? 0;
+                            @endphp
 
-                @error('village_id')
-                    <p class="mt-1 text-sm text-red-600">
-                        {{ $message }}
+                            <option
+                                value="{{ $village->id }}"
+                                data-village-name="{{ $village->name }}"
+                                data-account-count="{{ $jumlahAkun }}"
+                                data-email-preview="{{ $emailPreviews[$village->id] ?? '' }}"
+                                {{ old('village_id') == $village->id ? 'selected' : '' }}
+                                {{ $jumlahAkun >= 3 ? 'disabled' : '' }}
+                            >
+                                Kelurahan {{ $village->name }}
+                                ({{ $jumlahAkun }}/3 akun{{ $jumlahAkun >= 3 ? ', penuh' : '' }})
+                            </option>
+                        @endforeach
+                    </select>
+
+                    <p id="village-help" class="mt-1 text-slate-500 text-2xs">
+                        Pilih kelurahan yang masih memiliki kuota akun.
                     </p>
-                @enderror
 
-                <div
-                    id="account-count-info"
-                    class="hidden mt-2 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800"
-                ></div>
-            </div>
-
-            {{-- NAMA PENGELOLA --}}
-            <div>
-                <label
-                    for="name"
-                    class="block mb-2 font-medium"
-                >
-                    Nama Pengelola <span class="text-red-600">*</span>
-                </label>
-
-                <input
-                    id="name"
-                    type="text"
-                    name="name"
-                    value="{{ old('name') }}"
-                    maxlength="100"
-                    minlength="1"
-                    required
-                    autocomplete="name"
-                    class="w-full rounded-xl border border-border px-4 py-3"
-                    placeholder="Masukkan nama pengelola akun"
-                >
-
-                <p class="mt-1 text-xs text-text-muted">
-                    Masukkan nama orang yang menggunakan atau mengelola akun.
-                    Maksimal 100 karakter, hanya huruf dan spasi.
-                </p>
-
-                @error('name')
-                    <p class="mt-1 text-sm text-red-600">
-                        {{ $message }}
-                    </p>
-                @enderror
-            </div>
-
-            {{-- EMAIL OTOMATIS --}}
-            <div>
-                <label
-                    for="email_preview"
-                    class="block mb-2 font-medium"
-                >
-                    Email Akun Otomatis
-                </label>
-
-                <input
-                    id="email_preview"
-                    type="email"
-                    readonly
-                    value=""
-                    class="w-full rounded-xl border border-border bg-gray-100 text-gray-700 px-4 py-3"
-                    placeholder="Pilih kelurahan untuk melihat email otomatis"
-                    aria-describedby="email-info"
-                >
-
-                <p
-                    id="email-info"
-                    class="mt-1 text-xs text-text-muted"
-                >
-                    Email dibuat otomatis oleh sistem berdasarkan kelurahan
-                    dan urutan akun. Email tidak perlu diketik manual.
-                </p>
-            </div>
-
-            {{-- NOMOR TELEPON --}}
-            <div>
-                <label
-                    for="phone"
-                    class="block mb-2 font-medium"
-                >
-                    Nomor Telepon <span class="text-red-600">*</span>
-                </label>
-
-                <input
-                    id="phone"
-                    type="text"
-                    name="phone"
-                    value="{{ old('phone') }}"
-                    minlength="12"
-                    maxlength="15"
-                    inputmode="numeric"
-                    pattern="[0-9]{12,15}"
-                    autocomplete="tel"
-                    required
-                    class="w-full rounded-xl border border-border px-4 py-3"
-                    placeholder="Contoh: 081234567890"
-                >
-
-                <p class="mt-1 text-xs text-text-muted">
-                    Nomor telepon hanya boleh berisi angka, minimal 12
-                    dan maksimal 15 digit.
-                </p>
-
-                @error('phone')
-                    <p class="mt-1 text-sm text-red-600">
-                        {{ $message }}
-                    </p>
-                @enderror
-            </div>
-
-            {{-- PASSWORD --}}
-            <div>
-                <label
-                    for="password"
-                    class="block mb-2 font-medium"
-                >
-                    Password <span class="text-red-600">*</span>
-                </label>
-
-                <div class="relative">
-                    <input
-                        id="password"
-                        type="password"
-                        name="password"
-                        minlength="8"
-                        autocomplete="new-password"
-                        required
-                        class="w-full rounded-xl border border-border px-4 py-3 pr-24"
-                        placeholder="Minimal 8 karakter"
-                    >
-
-                    <button
-                        type="button"
-                        id="toggle-password"
-                        class="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-text-muted hover:text-text-primary"
-                    >
-                        Lihat
-                    </button>
+                    <p
+                        id="error-village_id"
+                        class="mt-1 text-rose-600 text-2xs {{ $errors->has('village_id') ? '' : 'hidden' }}"
+                        role="alert"
+                        aria-live="polite"
+                    >@error('village_id'){{ $message }}@enderror</p>
                 </div>
 
-                <p class="mt-1 text-xs text-text-muted">
-                    Minimal 8 karakter dan tidak boleh mengandung spasi.
-                </p>
+                {{-- NAMA PENGELOLA --}}
+                <div class="md:col-span-2">
+                    <label
+                        for="name"
+                        class="block font-semibold text-slate-700 mb-1"
+                    >
+                        Nama Pengelola <span class="text-rose-500">*</span>
+                    </label>
 
-                @error('password')
-                    <p class="mt-1 text-sm text-red-600">
-                        {{ $message }}
-                    </p>
-                @enderror
-            </div>
-
-            {{-- KONFIRMASI PASSWORD --}}
-            <div>
-                <label
-                    for="password_confirmation"
-                    class="block mb-2 font-medium"
-                >
-                    Konfirmasi Password <span class="text-red-600">*</span>
-                </label>
-
-                <div class="relative">
                     <input
-                        id="password_confirmation"
-                        type="password"
-                        name="password_confirmation"
-                        minlength="8"
-                        autocomplete="new-password"
+                        id="name"
+                        type="text"
+                        name="name"
+                        value="{{ old('name') }}"
+                        maxlength="100"
                         required
-                        class="w-full rounded-xl border border-border px-4 py-3 pr-24"
-                        placeholder="Ulangi password"
+                        autocomplete="name"
+                        placeholder="Masukkan nama pengelola"
+                        aria-describedby="name-help error-name"
+                        class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-emerald-700 focus:outline-none"
                     >
 
-                    <button
-                        type="button"
-                        id="toggle-confirmation"
-                        class="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-text-muted hover:text-text-primary"
-                    >
-                        Lihat
-                    </button>
+                    <p
+                        id="error-name"
+                        class="mt-1 text-rose-600 text-2xs {{ $errors->has('name') ? '' : 'hidden' }}"
+                        role="alert"
+                        aria-live="polite"
+                    >@error('name'){{ $message }}@enderror</p>
                 </div>
 
-                @error('password_confirmation')
-                    <p class="mt-1 text-sm text-red-600">
-                        {{ $message }}
+                {{-- EMAIL OTOMATIS --}}
+                <div class="md:col-span-2">
+                    <label
+                        for="email"
+                        class="block font-semibold text-slate-700 mb-1"
+                    >
+                        Email Akun
+                    </label>
+
+                    <input
+                        id="email"
+                        type="text"
+                        value=""
+                        readonly
+                        aria-describedby="email-help"
+                        placeholder="Pilih kelurahan terlebih dahulu"
+                        class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-xs text-slate-600 cursor-not-allowed"
+                    >
+
+                    <p id="email-help" class="mt-1 text-slate-500 text-2xs">
+                        Email dibuat otomatis oleh sistem dan tidak dapat diubah manual.
                     </p>
-                @enderror
+                </div>
+
+                {{-- NOMOR TELEPON --}}
+                <div class="md:col-span-2">
+                    <label
+                        for="phone"
+                        class="block font-semibold text-slate-700 mb-1"
+                    >
+                        Nomor Telepon <span class="text-rose-500">*</span>
+                    </label>
+
+                    <input
+                        id="phone"
+                        type="text"
+                        name="phone"
+                        value="{{ old('phone') }}"
+                        minlength="12"
+                        maxlength="15"
+                        inputmode="numeric"
+                        autocomplete="tel"
+                        required
+                        placeholder="Contoh: 081234567890"
+                        aria-describedby="phone-help error-phone"
+                        class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-emerald-700 focus:outline-none"
+                    >
+
+                    <p
+                        id="error-phone"
+                        class="mt-1 text-rose-600 text-2xs {{ $errors->has('phone') ? '' : 'hidden' }}"
+                        role="alert"
+                        aria-live="polite"
+                    >@error('phone'){{ $message }}@enderror</p>
+                </div>
+
+                {{-- PASSWORD --}}
+                <div class="md:col-span-2">
+                    <label
+                        for="password"
+                        class="block font-semibold text-slate-700 mb-1"
+                    >
+                        Password <span class="text-rose-500">*</span>
+                    </label>
+
+                    <div class="relative">
+                        <input
+                            id="password"
+                            type="password"
+                            name="password"
+                            minlength="8"
+                            autocomplete="new-password"
+                            required
+                            placeholder="Minimal 8 karakter"
+                            aria-describedby="password-help error-password"
+                            class="w-full px-3.5 py-2.5 pr-20 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-emerald-700 focus:outline-none"
+                        >
+
+                        <button
+                            type="button"
+                            data-toggle-password="password"
+                            class="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-800 text-xs font-semibold hover:underline"
+                            aria-label="Tampilkan password"
+                            aria-controls="password"
+                        >
+                            Lihat
+                        </button>
+                    </div>
+
+                    <p
+                        id="error-password"
+                        class="mt-1 text-rose-600 text-2xs {{ $errors->has('password') ? '' : 'hidden' }}"
+                        role="alert"
+                        aria-live="polite"
+                    >@error('password'){{ $message }}@enderror</p>
+                </div>
+
+                {{-- KONFIRMASI PASSWORD --}}
+                <div class="md:col-span-2">
+                    <label
+                        for="password_confirmation"
+                        class="block font-semibold text-slate-700 mb-1"
+                    >
+                        Konfirmasi Password <span class="text-rose-500">*</span>
+                    </label>
+
+                    <div class="relative">
+                        <input
+                            id="password_confirmation"
+                            type="password"
+                            name="password_confirmation"
+                            minlength="8"
+                            autocomplete="new-password"
+                            required
+                            placeholder="Ulangi password"
+                            aria-describedby="error-password_confirmation"
+                            class="w-full px-3.5 py-2.5 pr-20 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-emerald-700 focus:outline-none"
+                        >
+
+                        <button
+                            type="button"
+                            data-toggle-password="password_confirmation"
+                            class="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-800 text-xs font-semibold hover:underline"
+                            aria-label="Tampilkan konfirmasi password"
+                            aria-controls="password_confirmation"
+                        >
+                            Lihat
+                        </button>
+                    </div>
+
+                    <p
+                        id="error-password_confirmation"
+                        class="mt-1 text-rose-600 text-2xs {{ $errors->has('password_confirmation') ? '' : 'hidden' }}"
+                        role="alert"
+                        aria-live="polite"
+                    >@error('password_confirmation'){{ $message }}@enderror</p>
+                </div>
+
             </div>
 
             {{-- TOMBOL --}}
-            <div class="flex gap-3 pt-2">
+            <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
                 <a
                     href="{{ route('village-admins.index') }}"
-                    class="rounded-xl border border-border px-4 py-3"
+                    class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition"
                 >
                     Batal
                 </a>
 
                 <button
+                    id="submitButton"
                     type="submit"
                     {{ !$hasAvailableVillage ? 'disabled' : '' }}
-                    class="rounded-xl bg-accent-primary px-4 py-3 text-text-inverse hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                    class="px-5 py-2.5 rounded-xl text-xs font-semibold bg-emerald-800 hover:bg-emerald-900 text-white transition shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     Simpan Akun
                 </button>
             </div>
+
         </form>
     </div>
 </div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    const form = document.getElementById('createVillageAdminForm');
     const villageSelect = document.getElementById('village_id');
-    const nameInput = document.getElementById('name');
-    const emailPreview = document.getElementById('email_preview');
-    const accountCountInfo = document.getElementById('account-count-info');
+    const emailInput = document.getElementById('email');
+    const submitButton = document.getElementById('submitButton');
 
-    /*
-     * Perbarui email dan jumlah akun ketika kelurahan dipilih.
-     * Email hanya pratinjau; server tetap menghasilkan email final.
-     */
+    const fieldIds = [
+        'village_id',
+        'name',
+        'phone',
+        'password',
+        'password_confirmation'
+    ];
+
+    function setError(fieldId, message) {
+        const field = document.getElementById(fieldId);
+        const error = document.getElementById('error-' + fieldId);
+
+        if (!field || !error) return;
+
+        error.textContent = message;
+        error.classList.toggle('hidden', !message);
+
+        field.classList.toggle('border-rose-500', Boolean(message));
+        field.classList.toggle('border-slate-200', !message);
+
+        if (message) {
+            field.setAttribute('aria-invalid', 'true');
+        } else {
+            field.removeAttribute('aria-invalid');
+        }
+    }
+
+    function validateField(fieldId) {
+        const field = document.getElementById(fieldId);
+        const rawValue = field.value;
+        const value = rawValue.trim();
+        const password = document.getElementById('password').value;
+        const confirmation = document.getElementById('password_confirmation').value;
+
+        let message = '';
+
+        switch (fieldId) {
+            case 'village_id': {
+                const option = villageSelect.options[villageSelect.selectedIndex];
+
+                if (!value) {
+                    message = 'Kelurahan wajib dipilih.';
+                } else if (
+                    option.disabled ||
+                    Number(option.dataset.accountCount || 0) >= 3
+                ) {
+                    message = 'Kelurahan ini sudah memiliki maksimal 3 akun admin.';
+                }
+                break;
+            }
+
+            case 'name':
+                if (!value) {
+                    message = 'Nama pengelola wajib diisi.';
+                } else if (value.length > 100) {
+                    message = 'Nama pengelola maksimal 100 karakter.';
+                } else if (!/^[\p{L} ]+$/u.test(value)) {
+                    message = 'Nama pengelola hanya boleh berisi huruf dan spasi.';
+                }
+                break;
+
+            case 'phone':
+                if (!value) {
+                    message = 'Nomor telepon wajib diisi.';
+                } else if (!/^[0-9]+$/.test(rawValue)) {
+                    message = 'Nomor telepon hanya boleh berisi angka tanpa spasi.';
+                } else if (rawValue.length < 12) {
+                    message = 'Nomor telepon minimal 12 digit.';
+                } else if (rawValue.length > 15) {
+                    message = 'Nomor telepon maksimal 15 digit.';
+                }
+                break;
+
+            case 'password':
+                if (!rawValue) {
+                    message = 'Password wajib diisi.';
+                } else if (rawValue.length < 8) {
+                    message = 'Password minimal 8 karakter.';
+                } else if (/\s/.test(rawValue)) {
+                    message = 'Password tidak boleh mengandung spasi.';
+                }
+                break;
+
+            case 'password_confirmation':
+                if (!confirmation) {
+                    message = 'Konfirmasi password wajib diisi.';
+                } else if (confirmation !== password) {
+                    message = 'Konfirmasi password tidak sama dengan password.';
+                }
+                break;
+        }
+
+        setError(fieldId, message);
+        return message === '';
+    }
+
+    function validateForm() {
+        let isValid = true;
+
+        fieldIds.forEach(function (fieldId) {
+            if (!validateField(fieldId)) {
+                isValid = false;
+            }
+        });
+
+        return isValid;
+    }
+
+    form.addEventListener('submit', function (event) {
+        form.dataset.submitted = 'true';
+
+        if (!validateForm()) {
+            event.preventDefault();
+
+            const firstInvalid = fieldIds
+                .map(function (fieldId) {
+                    return document.getElementById(fieldId);
+                })
+                .find(function (field) {
+                    return field.getAttribute('aria-invalid') === 'true';
+                });
+
+            if (firstInvalid) {
+                firstInvalid.focus();
+                firstInvalid.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center'
+                });
+            }
+        }
+    });
+
+    fieldIds.forEach(function (fieldId) {
+        const field = document.getElementById(fieldId);
+
+        field.addEventListener('blur', function () {
+            validateField(fieldId);
+        });
+
+        field.addEventListener('input', function () {
+            const error = document.getElementById('error-' + fieldId);
+
+            if (
+                form.dataset.submitted === 'true' ||
+                !error.classList.contains('hidden')
+            ) {
+                validateField(fieldId);
+            }
+
+            if (fieldId === 'password') {
+                const confirmError =
+                    document.getElementById('error-password_confirmation');
+
+                if (
+                    form.dataset.submitted === 'true' ||
+                    !confirmError.classList.contains('hidden')
+                ) {
+                    validateField('password_confirmation');
+                }
+            }
+        });
+
+        field.addEventListener('change', function () {
+            const error = document.getElementById('error-' + fieldId);
+
+            if (
+                form.dataset.submitted === 'true' ||
+                !error.classList.contains('hidden')
+            ) {
+                validateField(fieldId);
+            }
+        });
+    });
+
     function updateVillageInfo() {
         const option = villageSelect.options[villageSelect.selectedIndex];
 
-        if (!option || !option.value) {
-            emailPreview.value = '';
-            emailPreview.placeholder =
-                'Pilih kelurahan untuk melihat email otomatis';
+        emailInput.value = option?.dataset.emailPreview || '';
+        emailInput.placeholder = option?.value
+            ? 'Email otomatis untuk Kelurahan ' + (option.dataset.villageName || '')
+            : 'Pilih kelurahan terlebih dahulu';
 
-            accountCountInfo.textContent = '';
-            accountCountInfo.classList.add('hidden');
+        const villageError = document.getElementById('error-village_id');
 
-            nameInput.placeholder = 'Masukkan nama pengelola akun';
-            return;
+        if (
+            form.dataset.submitted === 'true' ||
+            !villageError.classList.contains('hidden')
+        ) {
+            validateField('village_id');
         }
 
-        const villageName = option.dataset.villageName || '';
-        const count = Number(option.dataset.accountCount || 0);
-        const email = option.dataset.emailPreview || '';
+        const available = Array.from(villageSelect.options).some(function (item) {
+            return item.value !== '' &&
+                !item.disabled &&
+                Number(item.dataset.accountCount || 0) < 3;
+        });
 
-        emailPreview.value = email;
-        nameInput.placeholder = 'Nama pengelola ' + villageName;
-
-        accountCountInfo.textContent =
-            'Kelurahan ' + villageName + ' memiliki ' +
-            count + ' dari maksimal 3 akun admin.';
-
-        accountCountInfo.classList.remove('hidden');
-
-        if (count >= 3) {
-            emailPreview.value = '';
-            emailPreview.placeholder = 'Kapasitas akun kelurahan penuh';
-
-            accountCountInfo.classList.remove(
-                'bg-emerald-50',
-                'text-emerald-800'
-            );
-
-            accountCountInfo.classList.add(
-                'bg-red-50',
-                'text-red-800'
-            );
-        } else {
-            accountCountInfo.classList.remove(
-                'bg-red-50',
-                'text-red-800'
-            );
-
-            accountCountInfo.classList.add(
-                'bg-emerald-50',
-                'text-emerald-800'
-            );
-        }
+        submitButton.disabled = !available;
     }
 
     villageSelect.addEventListener('change', updateVillageInfo);
-    updateVillageInfo();
 
-    /*
-     * Tampilkan / sembunyikan password.
-     */
-    function setupPasswordToggle(inputId, buttonId) {
-        const input = document.getElementById(inputId);
-        const button = document.getElementById(buttonId);
-
+    document.querySelectorAll('[data-toggle-password]').forEach(function (button) {
         button.addEventListener('click', function () {
-            const isHidden = input.type === 'password';
+            const field = document.getElementById(button.dataset.togglePassword);
+            const isPassword = field.type === 'password';
 
-            input.type = isHidden ? 'text' : 'password';
-            button.textContent = isHidden ? 'Sembunyikan' : 'Lihat';
+            field.type = isPassword ? 'text' : 'password';
+            button.textContent = isPassword ? 'Sembunyikan' : 'Lihat';
             button.setAttribute(
                 'aria-label',
-                isHidden ? 'Sembunyikan password' : 'Tampilkan password'
+                isPassword ? 'Sembunyikan password' : 'Tampilkan password'
             );
         });
-    }
+    });
 
-    setupPasswordToggle('password', 'toggle-password');
-    setupPasswordToggle(
-        'password_confirmation',
-        'toggle-confirmation'
-    );
+    updateVillageInfo();
 });
 </script>
 @endsection
