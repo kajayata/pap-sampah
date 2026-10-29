@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../core/theme/app_theme.dart';
-import '../../providers/auth_provider.dart';
 import '../../providers/notification_provider.dart';
-import '../auth/login_screen.dart';
-import '../shared/notifications_screen.dart';
+import '../shared/profile_screen.dart';
 import 'citizen_home_tab.dart';
 import 'create_report_screen.dart';
 import 'report_list_screen.dart';
@@ -21,24 +18,37 @@ class CitizenMainScreen extends StatefulWidget {
 class _CitizenMainScreenState extends State<CitizenMainScreen> {
   int _currentIndex = 0;
   final GlobalKey<SpatialMapTabState> _mapKey = GlobalKey<SpatialMapTabState>();
+  late final NotificationProvider _notifProvider;
 
   @override
   void initState() {
     super.initState();
+    _notifProvider = context.read<NotificationProvider>();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // Start polling for report status changes (citizen)
-      context.read<NotificationProvider>().startPolling(isCitizen: true);
+      _notifProvider.startPolling(isCitizen: true);
     });
   }
 
   @override
   void dispose() {
-    context.read<NotificationProvider>().stopPolling();
+    _notifProvider.stopPolling();
     super.dispose();
   }
 
   void _onTabSelected(int index) {
+    // Index 4 (Profil) membuka halaman profil tersendiri, bukan mengganti tab.
+    if (index == 4) {
+      _openProfile();
+      return;
+    }
     setState(() => _currentIndex = index);
+  }
+
+  void _openProfile() {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const ProfileScreen()),
+    );
   }
 
   void _openCreateReport() {
@@ -58,6 +68,7 @@ class _CitizenMainScreenState extends State<CitizenMainScreen> {
     });
   }
 
+<<<<<<< Updated upstream
   void _showProfileModal() {
     final user = Provider.of<AuthProvider>(context, listen: false).currentUser;
 
@@ -170,79 +181,15 @@ class _CitizenMainScreenState extends State<CitizenMainScreen> {
     }
   }
 
+=======
+>>>>>>> Stashed changes
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: AppTheme.secondaryColor.withValues(alpha: 0.25),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(Icons.delete_sweep_rounded, color: Colors.white, size: 20),
-            ),
-            const SizedBox(width: 10),
-            const Text(
-              'Pap Sampah',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
-            ),
-          ],
-        ),
-        actions: [
-          // Notification Bell
-          Consumer<NotificationProvider>(
-            builder: (ctx, notifProv, _) {
-              return Stack(
-                alignment: Alignment.topRight,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.notifications_outlined, color: Colors.white),
-                    tooltip: 'Notifikasi',
-                    onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const NotificationsScreen()),
-                      );
-                    },
-                  ),
-                  if (notifProv.unreadCount > 0)
-                    Positioned(
-                      right: 8,
-                      top: 8,
-                      child: Container(
-                        padding: const EdgeInsets.all(3),
-                        decoration: BoxDecoration(
-                          color: AppTheme.accentDanger,
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 1.5),
-                        ),
-                        child: Text(
-                          notifProv.unreadCount > 9 ? '9+' : '${notifProv.unreadCount}',
-                          style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    ),
-                ],
-              );
-            },
-          ),
-          IconButton(
-            icon: const CircleAvatar(
-              radius: 14,
-              backgroundColor: Colors.white24,
-              child: Icon(Icons.person, size: 18, color: Colors.white),
-            ),
-            tooltip: 'Profil Saya',
-            onPressed: _showProfileModal,
-          ),
-        ],
-      ),
       floatingActionButton: FloatingActionButton.extended(
         heroTag: 'citizen_lapor_fab',
         onPressed: _openCreateReport,
-        backgroundColor: AppTheme.primaryColor,
+        backgroundColor: const Color(0xFF1F6B45),
         foregroundColor: Colors.white,
         icon: const Icon(Icons.camera_alt_rounded),
         label: const Text('Lapor Sampah', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -260,27 +207,33 @@ class _CitizenMainScreenState extends State<CitizenMainScreen> {
         selectedIndex: _currentIndex,
         onDestinationSelected: _onTabSelected,
         backgroundColor: Colors.white,
+        indicatorColor: const Color(0xFFDDF0E3),
         elevation: 2,
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home_rounded, color: AppTheme.primaryColor),
+            selectedIcon: Icon(Icons.home_rounded, color: Color(0xFF1F6B45)),
             label: 'Beranda',
           ),
           NavigationDestination(
             icon: Icon(Icons.map_outlined),
-            selectedIcon: Icon(Icons.map_rounded, color: AppTheme.primaryColor),
+            selectedIcon: Icon(Icons.map_rounded, color: Color(0xFF1F6B45)),
             label: 'Peta',
           ),
           NavigationDestination(
             icon: Icon(Icons.assignment_outlined),
-            selectedIcon: Icon(Icons.assignment_rounded, color: AppTheme.primaryColor),
+            selectedIcon: Icon(Icons.assignment_rounded, color: Color(0xFF1F6B45)),
             label: 'Laporan',
           ),
           NavigationDestination(
             icon: Icon(Icons.recycling_outlined),
-            selectedIcon: Icon(Icons.recycling_rounded, color: AppTheme.primaryColor),
+            selectedIcon: Icon(Icons.recycling_rounded, color: Color(0xFF1F6B45)),
             label: 'Bank Sampah',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.person_outline_rounded),
+            selectedIcon: Icon(Icons.person_rounded, color: Color(0xFF1F6B45)),
+            label: 'Profil',
           ),
         ],
       ),

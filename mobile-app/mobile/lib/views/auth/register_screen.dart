@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/auth_provider.dart';
+import 'auth_widgets.dart';
 import '../citizen/citizen_main_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -60,158 +61,104 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
+  Widget _eyeButton() => IconButton(
+        icon: Icon(
+          _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+          size: 20,
+          color: AuthColors.muted,
+        ),
+        onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+      );
+
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     final isLoading = auth.status == AuthStatus.authenticating;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Daftar Akun Warga'),
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const Text(
-                  'Bergabung Menjaga Kebersihan',
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: -0.3,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                const Text(
-                  'Daftarkan diri Anda sebagai warga masyarakat Kecamatan Sumbersari untuk melaporkan tumpukan sampah liar dan memantau pembersihan lingkungan.',
-                  style: TextStyle(fontSize: 13, color: AppTheme.textMuted, height: 1.4),
-                ),
-                const SizedBox(height: 24),
-
-                // Name Field
-                TextFormField(
-                  controller: _nameController,
-                  textInputAction: TextInputAction.next,
-                  decoration: const InputDecoration(
-                    labelText: 'Nama Lengkap',
-                    hintText: 'Nama sesuai KTP',
-                    prefixIcon: Icon(Icons.person_outline_rounded, size: 20),
-                  ),
-                  validator: (v) {
-                    if (v == null || v.trim().isEmpty) return 'Nama lengkap wajib diisi';
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 14),
-
-                // Email Field
-                TextFormField(
-                  controller: _emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  textInputAction: TextInputAction.next,
-                  decoration: const InputDecoration(
-                    labelText: 'Alamat Email',
-                    hintText: 'nama@email.com',
-                    prefixIcon: Icon(Icons.email_outlined, size: 20),
-                  ),
-                  validator: (v) {
-                    if (v == null || v.trim().isEmpty) return 'Email wajib diisi';
-                    if (!v.contains('@')) return 'Format email tidak valid';
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 14),
-
-                // Phone Field
-                TextFormField(
-                  controller: _phoneController,
-                  keyboardType: TextInputType.phone,
-                  textInputAction: TextInputAction.next,
-                  decoration: const InputDecoration(
-                    labelText: 'Nomor Telepon / WhatsApp (Opsional)',
-                    hintText: '081234567890',
-                    prefixIcon: Icon(Icons.phone_outlined, size: 20),
-                  ),
-                ),
-                const SizedBox(height: 14),
-
-                // Password Field
-                TextFormField(
-                  controller: _passwordController,
-                  obscureText: _obscurePassword,
-                  textInputAction: TextInputAction.next,
-                  decoration: InputDecoration(
-                    labelText: 'Kata Sandi',
-                    hintText: 'Minimal 8 karakter',
-                    prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                        size: 20,
-                      ),
-                      onPressed: () {
-                        setState(() => _obscurePassword = !_obscurePassword);
-                      },
-                    ),
-                  ),
-                  validator: (v) {
-                    if (v == null || v.isEmpty) return 'Kata sandi wajib diisi';
-                    if (v.length < 8) return 'Kata sandi minimal 8 karakter';
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 14),
-
-                // Confirm Password Field
-                TextFormField(
-                  controller: _confirmPasswordController,
-                  obscureText: _obscurePassword,
-                  textInputAction: TextInputAction.done,
-                  onFieldSubmitted: (_) => _handleRegister(),
-                  decoration: const InputDecoration(
-                    labelText: 'Ulangi Kata Sandi',
-                    prefixIcon: Icon(Icons.lock_clock_outlined, size: 20),
-                  ),
-                  validator: (v) {
-                    if (v != _passwordController.text) return 'Konfirmasi kata sandi tidak cocok';
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 24),
-
-                ElevatedButton(
-                  onPressed: isLoading ? null : _handleRegister,
-                  child: isLoading
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                        )
-                      : const Text('Daftar Sekarang'),
-                ),
-                const SizedBox(height: 20),
-
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text('Sudah memiliki akun? ', style: TextStyle(fontSize: 13, color: AppTheme.textMuted)),
-                    GestureDetector(
-                      onTap: () => Navigator.pop(context),
-                      child: const Text(
-                        'Masuk',
-                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.emphasis),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-              ],
+    return AuthScaffold(
+      title: 'Buat akun',
+      subtitle: 'Isi data berikut untuk mulai melaporkan sampah di lingkunganmu.',
+      showLogo: false,
+      heroHeight: 170,
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            AuthField(
+              label: 'Nama lengkap',
+              hint: 'Nama sesuai KTP',
+              icon: Icons.person_outline_rounded,
+              controller: _nameController,
+              textInputAction: TextInputAction.next,
+              validator: (v) {
+                if (v == null || v.trim().isEmpty) return 'Nama lengkap wajib diisi';
+                return null;
+              },
             ),
-          ),
+            const SizedBox(height: 14),
+            AuthField(
+              label: 'Email',
+              hint: 'nama@email.com',
+              icon: Icons.mail_outline_rounded,
+              controller: _emailController,
+              keyboardType: TextInputType.emailAddress,
+              textInputAction: TextInputAction.next,
+              validator: (v) {
+                if (v == null || v.trim().isEmpty) return 'Email wajib diisi';
+                if (!v.contains('@')) return 'Format email tidak valid';
+                return null;
+              },
+            ),
+            const SizedBox(height: 14),
+            AuthField(
+              label: 'Nomor telepon (opsional)',
+              hint: '081234567890',
+              icon: Icons.phone_outlined,
+              controller: _phoneController,
+              keyboardType: TextInputType.phone,
+              textInputAction: TextInputAction.next,
+            ),
+            const SizedBox(height: 14),
+            AuthField(
+              label: 'Kata sandi',
+              hint: 'Minimal 8 karakter',
+              icon: Icons.lock_outline_rounded,
+              controller: _passwordController,
+              obscureText: _obscurePassword,
+              textInputAction: TextInputAction.next,
+              suffix: _eyeButton(),
+              validator: (v) {
+                if (v == null || v.isEmpty) return 'Kata sandi wajib diisi';
+                if (v.length < 8) return 'Kata sandi minimal 8 karakter';
+                return null;
+              },
+            ),
+            const SizedBox(height: 14),
+            AuthField(
+              label: 'Konfirmasi kata sandi',
+              hint: 'Ulangi kata sandi',
+              icon: Icons.lock_reset_rounded,
+              controller: _confirmPasswordController,
+              obscureText: _obscurePassword,
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) => _handleRegister(),
+              validator: (v) {
+                if (v != _passwordController.text) {
+                  return 'Konfirmasi kata sandi tidak cocok';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 26),
+            AuthButton(label: 'Daftar', loading: isLoading, onPressed: _handleRegister),
+            const SizedBox(height: 22),
+            AuthSwitchLine(
+              text: 'Sudah punya akun?',
+              action: 'Masuk',
+              onTap: () => Navigator.pop(context),
+            ),
+          ],
         ),
       ),
     );
