@@ -85,42 +85,6 @@ class _CitizenHomeTabState extends State<CitizenHomeTab> {
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: _buildLevelCard(),
                   ),
-<<<<<<< Updated upstream
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 22,
-                          backgroundColor: Colors.white.withValues(alpha: 0.2),
-                          child: const Icon(Icons.person, color: Colors.white, size: 26),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Halo, ${user?.name ?? 'Warga Sumbersari'}',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 18),
-                    // Weather Card Widget
-                    _buildWeatherCard(),
-                  ],
-                ),
-=======
                   const SizedBox(height: 26),
                   _sectionTitle('Mulai dari sini'),
                   const SizedBox(height: 12),
@@ -151,7 +115,6 @@ class _CitizenHomeTabState extends State<CitizenHomeTab> {
                   // Ruang untuk tombol "Lapor Sampah" yang melayang & bottom nav.
                   const SizedBox(height: 110),
                 ],
->>>>>>> Stashed changes
               ),
             ],
           ),
