@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/news_article.dart';
@@ -5,12 +6,28 @@ import '../../providers/auth_provider.dart';
 import '../../providers/public_provider.dart';
 import '../../providers/report_provider.dart';
 import '../auth/auth_widgets.dart';
+import '../shared/notifications_screen.dart';
+import '../shared/profile_screen.dart';
 import 'create_report_screen.dart';
 import 'news_detail_screen.dart';
-import '../shared/profile_screen.dart';
 
-const _pageBg = Color(0xFFF4F6F2);
-const _cardBorder = Color(0xFFE4EAE4);
+// ---- Ilustrasi header -------------------------------------------------
+const _heroAsset = 'assets/images/home_header.png';
+// Ubah ke true jika bagian atas ilustrasimu gelap (teks sapaan jadi putih).
+const _heroIsDark = false;
+
+// ---- Palet (diambil dari mockup) --------------------------------------
+const _bg = Color(0xFFFBFFFA);
+const _border = Color(0xFFD5DEE6);
+const _sage = Color(0xFFEBF7E3);
+const _sky = Color(0xFFDBF4FF);
+const _sand = Color(0xFFFBF1DC);
+const _lilac = Color(0xFFEDE7F8);
+const _aqua = Color(0xFF9EF4E7);
+const _skyFg = Color(0xFF2F6DB5);
+const _sandFg = Color(0xFFB7791F);
+const _lilacFg = Color(0xFF6B4FA3);
+const _avatarBlue = Color(0xFF5B8DEF);
 const _amber = Color(0xFFB7791F);
 const _blue = Color(0xFF2563EB);
 
@@ -46,10 +63,13 @@ class _CitizenHomeTabState extends State<CitizenHomeTab> {
   @override
   Widget build(BuildContext context) {
     final user = Provider.of<AuthProvider>(context).currentUser;
-    final topPad = MediaQuery.of(context).padding.top;
+    final mq = MediaQuery.of(context);
+    final topPad = mq.padding.top;
+    final heroH = topPad + (mq.size.width * 0.78).clamp(260.0, 340.0).toDouble();
+    const overlap = 56.0; // seberapa jauh kartu pertama menimpa ilustrasi
 
     return Scaffold(
-      backgroundColor: _pageBg,
+      backgroundColor: _bg,
       body: RefreshIndicator(
         color: AuthColors.green,
         onRefresh: () async {
@@ -64,18 +84,17 @@ class _CitizenHomeTabState extends State<CitizenHomeTab> {
           physics: const AlwaysScrollableScrollPhysics(),
           child: Stack(
             children: [
-              // Latar hijau di belakang header; kartu ringkasan menimpanya.
               Positioned(
                 top: 0,
                 left: 0,
                 right: 0,
-                height: topPad + 250,
-                child: const CustomPaint(painter: HeroPainter(hillBase: 0.78)),
+                height: heroH,
+                child: _buildHero(),
               ),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildHeader(user?.name, user?.villageName, topPad),
+                  SizedBox(height: heroH - overlap),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: _buildSummaryCard(),
@@ -116,6 +135,13 @@ class _CitizenHomeTabState extends State<CitizenHomeTab> {
                   const SizedBox(height: 110),
                 ],
               ),
+              // Sapaan di paling atas supaya tombolnya selalu bisa diklik.
+              Positioned(
+                top: topPad + 14,
+                left: 20,
+                right: 20,
+                child: _buildHeader(user?.name, user?.villageName),
+              ),
             ],
           ),
         ),
@@ -123,104 +149,186 @@ class _CitizenHomeTabState extends State<CitizenHomeTab> {
     );
   }
 
+  // ------------------------------------------------------------ Ilustrasi
+
+  Widget _buildHero() {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Image.asset(
+          _heroAsset,
+          fit: BoxFit.cover,
+          alignment: Alignment.bottomCenter,
+          errorBuilder: (context, error, stackTrace) => _heroFallback(),
+        ),
+        // Pudar ke warna latar agar ilustrasi menyatu dengan halaman.
+        Positioned(
+          left: 0,
+          right: 0,
+          bottom: 0,
+          height: 90,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [_bg.withValues(alpha: 0), _bg],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Tampil jika file gambar belum ada / path salah.
+  Widget _heroFallback() {
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Colors.white, _aqua],
+        ),
+      ),
+      alignment: Alignment.bottomRight,
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 70),
+      child: kDebugMode
+          ? const Text(
+              'Letakkan gambar di\n$_heroAsset',
+              textAlign: TextAlign.right,
+              style: TextStyle(fontSize: 11, color: AuthColors.muted),
+            )
+          : null,
+    );
+  }
+
   // ---------------------------------------------------------------- Header
 
-    Widget _buildHeader(String? name, String? village, double topPad) {
+  Widget _buildHeader(String? name, String? village) {
+    final textColor = _heroIsDark ? Colors.white : AuthColors.ink;
+    final subColor = _heroIsDark
+        ? Colors.white.withValues(alpha: 0.8)
+        : AuthColors.muted;
     final location = village != null
         ? 'Kelurahan $village'
         : 'Kecamatan Sumbersari, Jember';
 
-    return Padding(
-      padding: EdgeInsets.fromLTRB(20, topPad + 18, 20, 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              GestureDetector(
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const ProfileScreen()),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            GestureDetector(
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ProfileScreen()),
+              ),
+              child: Container(
+                width: 46,
+                height: 46,
+                decoration: BoxDecoration(
+                  color: _avatarBlue,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 2),
                 ),
-                child: Container(
-                  width: 46,
-                  height: 46,
-                  decoration: const BoxDecoration(
-                    color: AuthColors.yellow,
-                    shape: BoxShape.circle,
+                alignment: Alignment.center,
+                child: Text(
+                  _initial(name),
+                  style: const TextStyle(
+                    fontSize: 19,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
                   ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    _initial(name),
-                    style: const TextStyle(
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Hi,', style: TextStyle(fontSize: 12.5, color: subColor)),
+                  Text(
+                    name ?? 'Warga Sumbersari',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
                       fontSize: 19,
                       fontWeight: FontWeight.w800,
-                      color: AuthColors.greenDark,
+                      color: textColor,
+                      letterSpacing: -0.3,
+                      height: 1.15,
                     ),
                   ),
-                ),
+                ],
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Halo,',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.white.withValues(alpha: 0.78),
-                      ),
-                    ),
-                    Text(
-                      name ?? 'Warga Sumbersari',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.white,
-                        letterSpacing: -0.4,
-                        height: 1.15,
-                      ),
-                    ),
-                  ],
-                ),
+            ),
+            const SizedBox(width: 8),
+            _roundButton(
+              Icons.notifications_none_rounded,
+              () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => NotificationsScreen()),
               ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              _headerPill(Icons.location_on_rounded, location),
-              _buildWeatherPill(),
-            ],
-          ),
-        ],
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            _headerPill(Icons.location_on_rounded, location),
+            _buildWeatherPill(),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _roundButton(IconData icon, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 42,
+        height: 42,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          shape: BoxShape.circle,
+          border: Border.all(color: _border),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.06),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Icon(icon, size: 21, color: AuthColors.ink),
       ),
     );
   }
 
   Widget _headerPill(IconData icon, String text) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.16),
+        color: Colors.white.withValues(alpha: 0.92),
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: _border),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: AuthColors.yellow),
+          Icon(icon, size: 14, color: AuthColors.green),
           const SizedBox(width: 6),
           Text(
             text,
             style: const TextStyle(
-              fontSize: 12,
+              fontSize: 11.5,
               fontWeight: FontWeight.w600,
-              color: Colors.white,
+              color: AuthColors.ink,
             ),
           ),
         ],
@@ -311,7 +419,7 @@ class _CitizenHomeTabState extends State<CitizenHomeTab> {
                 child: LinearProgressIndicator(
                   value: ratio,
                   minHeight: 8,
-                  backgroundColor: AuthColors.field,
+                  backgroundColor: _sage,
                   valueColor: const AlwaysStoppedAnimation(AuthColors.green),
                 ),
               ),
@@ -323,7 +431,7 @@ class _CitizenHomeTabState extends State<CitizenHomeTab> {
                 style: const TextStyle(fontSize: 11.5, color: AuthColors.muted),
               ),
               const SizedBox(height: 14),
-              const Divider(height: 1, color: _cardBorder),
+              const Divider(height: 1, color: _border),
               const SizedBox(height: 14),
               Row(
                 children: [
@@ -408,9 +516,8 @@ class _CitizenHomeTabState extends State<CitizenHomeTab> {
                       child: CircularProgressIndicator(
                         value: info.progress == 0 ? 0.02 : info.progress,
                         strokeWidth: 6,
-                        backgroundColor: AuthColors.field,
-                        valueColor:
-                            const AlwaysStoppedAnimation(Color(0xFF1F6B45)),
+                        backgroundColor: _sage,
+                        valueColor: const AlwaysStoppedAnimation(AuthColors.green),
                         strokeCap: StrokeCap.round,
                       ),
                     ),
@@ -477,15 +584,12 @@ class _CitizenHomeTabState extends State<CitizenHomeTab> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Expanded(
-                child: _bigTile(
+                child: _actionTile(
                   icon: Icons.photo_camera_rounded,
+                  tileBg: _sage,
+                  iconColor: AuthColors.green,
                   title: 'Lapor Sampah',
                   subtitle: 'Kirim foto & lokasi GPS',
-                  background: const Color.fromRGBO(31, 107, 69, 1),
-                  iconBg: AuthColors.yellow,
-                  iconColor: AuthColors.greenDark,
-                  titleColor: Colors.white,
-                  subtitleColor: Colors.white.withValues(alpha: 0.78),
                   onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(builder: (_) => const CreateReportScreen()),
@@ -494,15 +598,12 @@ class _CitizenHomeTabState extends State<CitizenHomeTab> {
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: _bigTile(
+                child: _actionTile(
                   icon: Icons.map_rounded,
+                  tileBg: _sky,
+                  iconColor: _skyFg,
                   title: 'Peta Sebaran',
                   subtitle: 'Titik sampah di sekitarmu',
-                  background: const Color(0xFFE3EFE6),
-                  iconBg: Colors.white,
-                  iconColor: AuthColors.green,
-                  titleColor: AuthColors.ink,
-                  subtitleColor: AuthColors.muted,
                   onTap: () => widget.onSwitchTab?.call(1),
                 ),
               ),
@@ -510,124 +611,87 @@ class _CitizenHomeTabState extends State<CitizenHomeTab> {
           ),
         ),
         const SizedBox(height: 12),
-        _rowTile(
-          icon: Icons.recycling_rounded,
-          title: 'Bank Sampah',
-          subtitle: 'Lokasi bank sampah & TPA terdekat',
-          onTap: () => widget.onSwitchTab?.call(3),
-        ),
-        const SizedBox(height: 10),
-        _rowTile(
-          icon: Icons.assignment_rounded,
-          title: 'Laporan Saya',
-          subtitle: 'Pantau status pengaduanmu',
-          onTap: () => widget.onSwitchTab?.call(2),
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: _actionTile(
+                  icon: Icons.recycling_rounded,
+                  tileBg: _sand,
+                  iconColor: _sandFg,
+                  title: 'Bank Sampah',
+                  subtitle: 'Lokasi bank sampah & TPA',
+                  onTap: () => widget.onSwitchTab?.call(3),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _actionTile(
+                  icon: Icons.assignment_rounded,
+                  tileBg: _lilac,
+                  iconColor: _lilacFg,
+                  title: 'Laporan Saya',
+                  subtitle: 'Pantau status pengaduan',
+                  onTap: () => widget.onSwitchTab?.call(2),
+                ),
+              ),
+            ],
+          ),
         ),
       ],
     );
   }
 
-  Widget _bigTile({
+  Widget _actionTile({
     required IconData icon,
+    required Color tileBg,
+    required Color iconColor,
     required String title,
     required String subtitle,
-    required Color background,
-    required Color iconBg,
-    required Color iconColor,
-    required Color titleColor,
-    required Color subtitleColor,
     required VoidCallback onTap,
   }) {
     return Material(
-      color: background,
-      borderRadius: BorderRadius.circular(22),
+      color: tileBg,
+      borderRadius: BorderRadius.circular(24),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(24),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                width: 46,
-                height: 46,
-                decoration: BoxDecoration(color: iconBg, shape: BoxShape.circle),
-                child: Icon(icon, size: 23, color: iconColor),
+                width: 44,
+                height: 44,
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, size: 22, color: iconColor),
               ),
-              const SizedBox(height: 22),
+              const SizedBox(height: 16),
               Text(
                 title,
-                style: TextStyle(
-                  fontSize: 16,
+                style: const TextStyle(
+                  fontSize: 14.5,
                   fontWeight: FontWeight.w800,
-                  color: titleColor,
+                  color: AuthColors.ink,
                   letterSpacing: -0.2,
                 ),
               ),
-              const SizedBox(height: 3),
+              const SizedBox(height: 2),
               Text(
                 subtitle,
-                style: TextStyle(fontSize: 11.5, height: 1.35, color: subtitleColor),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _rowTile({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-  }) {
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(18),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: _cardBorder),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: AuthColors.field,
-                  borderRadius: BorderRadius.circular(13),
-                ),
-                child: Icon(icon, size: 22, color: AuthColors.green),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: AuthColors.ink,
-                      ),
-                    ),
-                    const SizedBox(height: 1),
-                    Text(
-                      subtitle,
-                      style: const TextStyle(fontSize: 11.5, color: AuthColors.muted),
-                    ),
-                  ],
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 11.5,
+                  height: 1.35,
+                  color: Color(0xFF55655B),
                 ),
               ),
-              const Icon(Icons.chevron_right_rounded, color: AuthColors.muted),
             ],
           ),
         ),
@@ -650,12 +714,12 @@ class _CitizenHomeTabState extends State<CitizenHomeTab> {
                 Container(
                   width: 44,
                   height: 44,
-                  decoration: BoxDecoration(
-                    color: AuthColors.yellow.withValues(alpha: 0.3),
+                  decoration: const BoxDecoration(
+                    color: _sage,
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(Icons.add_a_photo_rounded,
-                      size: 21, color: AuthColors.greenDark),
+                      size: 21, color: AuthColors.green),
                 ),
                 const SizedBox(width: 14),
                 const Expanded(
@@ -718,15 +782,15 @@ class _CitizenHomeTabState extends State<CitizenHomeTab> {
 
     return Material(
       color: Colors.white,
-      borderRadius: BorderRadius.circular(18),
+      borderRadius: BorderRadius.circular(20),
       child: InkWell(
         onTap: () => widget.onSwitchTab?.call(2),
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(20),
         child: Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: _cardBorder),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: _border),
           ),
           child: Row(
             children: [
@@ -734,8 +798,8 @@ class _CitizenHomeTabState extends State<CitizenHomeTab> {
                 width: 42,
                 height: 42,
                 decoration: BoxDecoration(
-                  color: AuthColors.field,
-                  borderRadius: BorderRadius.circular(13),
+                  color: _sage,
+                  borderRadius: BorderRadius.circular(14),
                 ),
                 child: const Icon(Icons.delete_outline_rounded,
                     size: 22, color: AuthColors.green),
@@ -794,10 +858,11 @@ class _CitizenHomeTabState extends State<CitizenHomeTab> {
     final tip = _tips[DateTime.now().day % _tips.length];
 
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AuthColors.yellow,
-        borderRadius: BorderRadius.circular(22),
+        color: const Color(0xFFFBF7EA),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFFF0E6C4)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -806,11 +871,10 @@ class _CitizenHomeTabState extends State<CitizenHomeTab> {
             width: 40,
             height: 40,
             decoration: const BoxDecoration(
-              color: AuthColors.greenDark,
+              color: Color(0xFFF8EBC4),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.lightbulb_rounded,
-                size: 21, color: AuthColors.yellow),
+            child: const Icon(Icons.lightbulb_rounded, size: 21, color: _amber),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -822,7 +886,7 @@ class _CitizenHomeTabState extends State<CitizenHomeTab> {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w800,
-                    color: AuthColors.greenDark,
+                    color: AuthColors.ink,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -831,7 +895,7 @@ class _CitizenHomeTabState extends State<CitizenHomeTab> {
                   style: const TextStyle(
                     fontSize: 12.5,
                     height: 1.45,
-                    color: AuthColors.greenDark,
+                    color: Color(0xFF4A5A50),
                   ),
                 ),
               ],
@@ -887,7 +951,7 @@ class _CitizenHomeTabState extends State<CitizenHomeTab> {
 
   Widget _buildNewsCard(NewsArticle item) {
     Widget placeholder() => Container(
-          color: const Color(0xFFE3EFE6),
+          color: _sage,
           child: const Center(
             child: Icon(Icons.eco_rounded, color: AuthColors.green, size: 36),
           ),
@@ -895,7 +959,7 @@ class _CitizenHomeTabState extends State<CitizenHomeTab> {
 
     return Material(
       color: Colors.white,
-      borderRadius: BorderRadius.circular(22),
+      borderRadius: BorderRadius.circular(24),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: () => Navigator.push(
@@ -905,8 +969,8 @@ class _CitizenHomeTabState extends State<CitizenHomeTab> {
         child: Container(
           width: 250,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: _cardBorder),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: _border),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -932,7 +996,7 @@ class _CitizenHomeTabState extends State<CitizenHomeTab> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 9, vertical: 4),
                         decoration: BoxDecoration(
-                          color: AuthColors.yellow,
+                          color: Colors.white.withValues(alpha: 0.92),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: const Text(
@@ -940,7 +1004,7 @@ class _CitizenHomeTabState extends State<CitizenHomeTab> {
                           style: TextStyle(
                             fontSize: 10.5,
                             fontWeight: FontWeight.w800,
-                            color: AuthColors.greenDark,
+                            color: AuthColors.green,
                           ),
                         ),
                       ),
@@ -1023,14 +1087,14 @@ class _CitizenHomeTabState extends State<CitizenHomeTab> {
       padding: padding,
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: _cardBorder),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: _border),
         boxShadow: shadow
             ? [
                 BoxShadow(
-                  color: AuthColors.greenDark.withValues(alpha: 0.12),
-                  blurRadius: 24,
-                  offset: const Offset(0, 10),
+                  color: Colors.black.withValues(alpha: 0.06),
+                  blurRadius: 20,
+                  offset: const Offset(0, 6),
                 ),
               ]
             : null,
