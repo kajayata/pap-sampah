@@ -235,7 +235,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                 ),
 
-                // Tombol kembali di atas (Persis seperti LoginScreen)
+                // Tombol kembali di atas
                 SafeArea(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
