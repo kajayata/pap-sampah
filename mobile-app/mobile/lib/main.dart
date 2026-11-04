@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'core/constants/api_constants.dart';
 import 'core/theme/app_theme.dart';
@@ -20,6 +21,9 @@ Future<void> main() async {
 class PapSampahApp extends StatelessWidget {
   const PapSampahApp({super.key});
 
+  static const double _maxWidth = 480;
+  static const Color _outerBg = Color(0xFFE9FAF6);
+
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
@@ -33,8 +37,32 @@ class PapSampahApp extends StatelessWidget {
       child: MaterialApp(
         title: 'Pap Sampah Sumbersari',
         debugShowCheckedModeBanner: false,
-        theme: AppTheme.lightTheme,
+        theme: AppTheme.lightTheme.copyWith(
+          textTheme: GoogleFonts.plusJakartaSansTextTheme(
+            AppTheme.lightTheme.textTheme,
+          ),
+        ),
         home: const SplashScreen(),
+        builder: (context, child) {
+          final mq = MediaQuery.of(context);
+
+          // Di ponsel (lebar <= 480) tidak ada perubahan.
+          if (mq.size.width <= _maxWidth) return child!;
+
+          // Di tablet/desktop: konten dipusatkan selebar 480.
+          return ColoredBox(
+            color: _outerBg,
+            child: Center(
+              child: SizedBox(
+                width: _maxWidth,
+                child: MediaQuery(
+                  data: mq.copyWith(size: Size(_maxWidth, mq.size.height)),
+                  child: ClipRect(child: child!),
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }
