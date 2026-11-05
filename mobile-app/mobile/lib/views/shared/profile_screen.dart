@@ -1,14 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../auth/auth_widgets.dart';
-import '../auth/forgot_password_screen.dart'; // Pastikan import halaman lupa sandimu benar
+import '../auth/forgot_password_screen.dart';
 import '../auth/onboarding_screen.dart';
 
-const _pageBg = Color(0xFFF4F6F2);
-const _cardBorder = Color(0xFFE4EAE4);
+// ---- Palet (sama dengan beranda) ---------------------------------------
+const _bg = Color(0xFFFBFFFA);
+const _border = Color(0xFFD5DEE6);
+const _sage = Color(0xFFEBF7E3);
+const _sky = Color(0xFFDBF4FF);
+const _aqua = Color(0xFF9EF4E7);
+const _avatarBlue = Color(0xFF5B8DEF);
 const _danger = Color(0xFFDC2626);
-const _greenPrimary = Color(0xFF1F6B45);
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -19,7 +24,8 @@ class ProfileScreen extends StatelessWidget {
     final topPad = MediaQuery.of(context).padding.top;
     final bottomPad = MediaQuery.of(context).padding.bottom;
 
-    final name = (user?.name ?? '').trim().isEmpty ? 'Warga Masyarakat' : user!.name;
+    final name =
+        (user?.name ?? '').trim().isEmpty ? 'Warga Masyarakat' : user!.name;
     final village = user?.villageName;
     final area = village != null
         ? 'Kelurahan $village, Sumbersari'
@@ -27,196 +33,241 @@ class ProfileScreen extends StatelessWidget {
     final phone = (user?.phone ?? '').toString().trim();
     final isPetugas = user?.isPetugas ?? false;
 
-    return Scaffold(
-      backgroundColor: _pageBg,
-      body: SingleChildScrollView(
-        child: Stack(
-          children: [
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              height: topPad + 300,
-              child: const CustomPaint(painter: HeroPainter(hillBase: 0.8)),
-            ),
-            Column(
-              children: [
-                Padding(
-                  padding: EdgeInsets.fromLTRB(16, topPad + 12, 16, 0),
-                  child: Row(
-                    children: [
-                      RoundIconButton(
-                        icon: Icons.arrow_back_ios_new_rounded,
-                        onPressed: () => Navigator.maybePop(context),
-                      ),
-                      const Expanded(
-                        child: Text(
-                          'Profil',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.white,
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.dark,
+      child: Scaffold(
+        backgroundColor: _bg,
+        body: SingleChildScrollView(
+          child: Stack(
+            children: [
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                height: topPad + 300,
+                child: const ClipRRect(
+                  borderRadius:
+                      BorderRadius.vertical(bottom: Radius.circular(32)),
+                  child: CustomPaint(painter: _HeaderPainter()),
+                ),
+              ),
+              Column(
+                children: [
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(16, topPad + 12, 16, 0),
+                    child: Row(
+                      children: [
+                        _roundButton(
+                          Icons.arrow_back_ios_new_rounded,
+                          () => Navigator.maybePop(context),
+                        ),
+                        const Expanded(
+                          child: Text(
+                            'Profil',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                              color: AuthColors.ink,
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 40),
-                    ],
+                        const SizedBox(width: 42),
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(height: 10),
-                _buildAvatar(name),
-                const SizedBox(height: 12),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Text(
-                    name,
-                    textAlign: TextAlign.center,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w800,
+                  const SizedBox(height: 10),
+                  _buildAvatar(name),
+                  const SizedBox(height: 12),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Text(
+                      name,
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                        color: AuthColors.ink,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    user?.email ?? '',
+                    style: const TextStyle(fontSize: 13, color: AuthColors.muted),
+                  ),
+                  const SizedBox(height: 10),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                    decoration: BoxDecoration(
                       color: Colors.white,
-                      letterSpacing: -0.5,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: _border),
                     ),
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  user?.email ?? '',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.white.withValues(alpha: 0.78),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: AuthColors.yellow,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    _capitalize(user?.role ?? 'masyarakat'),
-                    style: const TextStyle(
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w800,
-                      color: AuthColors.greenDark,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 26),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // Informasi Akun
-                      _card(
-                        shadow: true,
-                        child: Column(
-                          children: [
-                            _infoRow(Icons.mail_outline_rounded, 'Email', user?.email ?? '-'),
-                            _divider(),
-                            _infoRow(Icons.phone_outlined, 'Nomor telepon',
-                                phone.isEmpty ? '-' : phone),
-                            _divider(),
-                            _infoRow(
-                              Icons.location_city_rounded,
-                              isPetugas ? 'Wilayah penugasan' : 'Domisili',
-                              area,
-                            ),
-                          ],
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          isPetugas
+                              ? Icons.engineering_rounded
+                              : Icons.eco_rounded,
+                          size: 14,
+                          color: AuthColors.green,
                         ),
-                      ),
-                      
-                      const SizedBox(height: 22),
-
-                      // Tombol Ubah Kata Sandi (Menggunakan halaman ForgotPasswordScreen yang sudah ada)
-                      SizedBox(
-                        height: 54,
-                        child: OutlinedButton.icon(
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: _greenPrimary,
-                            backgroundColor: Colors.white,
-                            side: const BorderSide(color: _greenPrimary, width: 1.5),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(27),
-                            ),
+                        const SizedBox(width: 6),
+                        Text(
+                          _capitalize(user?.role ?? 'masyarakat'),
+                          style: const TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w800,
+                            color: AuthColors.green,
                           ),
-                          onPressed: () {
-                            Navigator.push(
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Informasi akun
+                        _card(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 4),
+                          child: Column(
+                            children: [
+                              _infoRow(Icons.mail_outline_rounded, 'Email',
+                                  user?.email ?? '-'),
+                              _divider(),
+                              _infoRow(Icons.phone_outlined, 'Nomor telepon',
+                                  phone.isEmpty ? '-' : phone),
+                              _divider(),
+                              _infoRow(
+                                Icons.location_city_rounded,
+                                isPetugas ? 'Wilayah penugasan' : 'Domisili',
+                                area,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 22),
+
+                        // Ubah kata sandi (memakai alur kode verifikasi email)
+                        SizedBox(
+                          height: 54,
+                          child: OutlinedButton.icon(
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AuthColors.green,
+                              backgroundColor: Colors.white,
+                              side: const BorderSide(
+                                  color: AuthColors.green, width: 1.5),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(27),
+                              ),
+                            ),
+                            onPressed: () => Navigator.push(
                               context,
                               MaterialPageRoute(
                                 builder: (_) => ForgotPasswordScreen(
                                   initialEmail: user?.email ?? '',
                                 ),
                               ),
-                            );
-                          },
-                          icon: const Icon(Icons.lock_reset_rounded, size: 20),
-                          label: const Text(
-                            'Ubah Kata Sandi',
-                            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 14),
-                      
-                      // Tombol Keluar Akun
-                      SizedBox(
-                        height: 54,
-                        child: OutlinedButton.icon(
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: _danger,
-                            backgroundColor: Colors.white,
-                            side: const BorderSide(color: _danger, width: 1.5),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(27),
+                            ),
+                            icon: const Icon(Icons.lock_reset_rounded, size: 20),
+                            label: const Text(
+                              'Ubah Kata Sandi',
+                              style: TextStyle(
+                                  fontSize: 15, fontWeight: FontWeight.w800),
                             ),
                           ),
-                          onPressed: () => _handleLogout(context),
-                          icon: const Icon(Icons.logout_rounded, size: 19),
-                          label: const Text(
-                            'Keluar Akun',
-                            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
+                        ),
+                        const SizedBox(height: 12),
+
+                        // Keluar akun
+                        SizedBox(
+                          height: 54,
+                          child: OutlinedButton.icon(
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: _danger,
+                              backgroundColor: Colors.white,
+                              side: const BorderSide(color: _danger, width: 1.5),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(27),
+                              ),
+                            ),
+                            onPressed: () => _handleLogout(context),
+                            icon: const Icon(Icons.logout_rounded, size: 19),
+                            label: const Text(
+                              'Keluar Akun',
+                              style: TextStyle(
+                                  fontSize: 15, fontWeight: FontWeight.w800),
+                            ),
                           ),
                         ),
-                      ),
-
-                      const SizedBox(height: 20),
-                      const Center(
-                        child: Text(
-                          'PapSampah · Kecamatan Sumbersari, Jember',
-                          style: TextStyle(fontSize: 11.5, color: AuthColors.muted),
+                        const SizedBox(height: 20),
+                        const Center(
+                          child: Text(
+                            'PapSampah · Kecamatan Sumbersari, Jember',
+                            style:
+                                TextStyle(fontSize: 11.5, color: AuthColors.muted),
+                          ),
                         ),
-                      ),
-                      SizedBox(height: 24 + bottomPad),
-                    ],
+                        SizedBox(height: 24 + bottomPad),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ------------------------------------------------------------- Komponen
+
+  Widget _roundButton(IconData icon, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 42,
+        height: 42,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          shape: BoxShape.circle,
+          border: Border.all(color: _border),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
             ),
           ],
         ),
+        child: Icon(icon, size: 19, color: AuthColors.ink),
       ),
     );
   }
 
   Widget _buildAvatar(String name) {
     return Container(
-      width: 88,
-      height: 88,
+      width: 92,
+      height: 92,
       decoration: BoxDecoration(
-        color: AuthColors.yellow,
+        color: _avatarBlue,
         shape: BoxShape.circle,
-        border: Border.all(color: Colors.white.withValues(alpha: 0.9), width: 4),
+        border: Border.all(color: Colors.white, width: 4),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.18),
-            blurRadius: 20,
+            color: _avatarBlue.withOpacity(0.35),
+            blurRadius: 22,
             offset: const Offset(0, 8),
           ),
         ],
@@ -225,9 +276,9 @@ class ProfileScreen extends StatelessWidget {
       child: Text(
         name.trim().isEmpty ? 'W' : name.trim()[0].toUpperCase(),
         style: const TextStyle(
-          fontSize: 36,
+          fontSize: 38,
           fontWeight: FontWeight.w800,
-          color: AuthColors.greenDark,
+          color: Colors.white,
         ),
       ),
     );
@@ -242,8 +293,8 @@ class ProfileScreen extends StatelessWidget {
             width: 42,
             height: 42,
             decoration: BoxDecoration(
-              color: AuthColors.field,
-              borderRadius: BorderRadius.circular(13),
+              color: _sage,
+              borderRadius: BorderRadius.circular(14),
             ),
             child: Icon(icon, size: 21, color: AuthColors.green),
           ),
@@ -273,22 +324,26 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _divider() => const Divider(height: 1, color: _cardBorder);
+  Widget _divider() => const Divider(height: 1, color: _border);
 
-  Widget _card({required Widget child, bool shadow = false}) {
+  Widget _card({
+    required Widget child,
+    required EdgeInsets padding,
+    bool shadow = false,
+  }) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      padding: padding,
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: _cardBorder),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: _border),
         boxShadow: shadow
             ? [
                 BoxShadow(
-                  color: AuthColors.greenDark.withValues(alpha: 0.12),
-                  blurRadius: 24,
-                  offset: const Offset(0, 10),
+                  color: Colors.black.withOpacity(0.06),
+                  blurRadius: 20,
+                  offset: const Offset(0, 6),
                 ),
               ]
             : null,
@@ -299,6 +354,8 @@ class ProfileScreen extends StatelessWidget {
 
   String _capitalize(String s) =>
       s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
+
+  // --------------------------------------------------------------- Logout
 
   Future<void> _handleLogout(BuildContext context) async {
     final confirm = await showDialog<bool>(
@@ -319,17 +376,20 @@ class ProfileScreen extends StatelessWidget {
           TextButton(
             style: TextButton.styleFrom(foregroundColor: AuthColors.muted),
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Batal', style: TextStyle(fontWeight: FontWeight.w700)),
+            child: const Text('Batal',
+                style: TextStyle(fontWeight: FontWeight.w700)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: _danger,
               foregroundColor: Colors.white,
               elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20)),
             ),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Keluar', style: TextStyle(fontWeight: FontWeight.w800)),
+            child: const Text('Keluar',
+                style: TextStyle(fontWeight: FontWeight.w800)),
           ),
         ],
       ),
@@ -345,4 +405,40 @@ class ProfileScreen extends StatelessWidget {
       }
     }
   }
+}
+
+/// Latar header profil: gradien aqua lembut + lingkaran pastel.
+class _HeaderPainter extends CustomPainter {
+  const _HeaderPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width;
+    final h = size.height;
+    final rect = Offset.zero & size;
+
+    canvas.drawRect(
+      rect,
+      Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [_aqua.withOpacity(0.55), const Color(0xFFEAF9F4)],
+        ).createShader(rect),
+    );
+
+    canvas.drawCircle(
+      Offset(w * 0.92, h * 0.12),
+      w * 0.34,
+      Paint()..color = _sky.withOpacity(0.75),
+    );
+    canvas.drawCircle(
+      Offset(w * 0.02, h * 0.38),
+      w * 0.22,
+      Paint()..color = _sage.withOpacity(0.85),
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _HeaderPainter oldDelegate) => false;
 }
