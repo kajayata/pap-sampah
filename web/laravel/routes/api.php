@@ -83,3 +83,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/tasks/{id}/photos', [WorkerTaskController::class, 'uploadPhoto']);
     Route::post('/tasks/{id}/complete', [WorkerTaskController::class, 'complete']);
 });
+
+//testess
